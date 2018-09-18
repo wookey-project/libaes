@@ -1,0 +1,50 @@
+config USR_LIB_AES
+  bool  "userspace libaes with HW Cryp support"
+  default y
+  ---help---
+  Support for AES implementation in both software and
+  hardware mode, depending on the SoC.
+config USR_LIB_AES_CFLAGS
+  string
+  default " -I../../libs/aes " if USR_LIB_AES
+
+menu "libaes features"
+  depends on USR_LIB_AES
+
+config USR_LIB_AES_SELFTESTS
+  default n
+  bool "Embed AES selftest vectors"
+
+config USR_LIB_AES_PERF
+  default n
+  bool "Embed AES performance test benchmarks"
+
+config USR_LIB_AES_ALGO_MBEDTLS
+  default n
+  bool "Embed AES MBEDTLS support"
+config USR_LIB_AES_ALGO_ANSSI_MASKED
+  default n
+  bool "Embed AES ANSSI masked"
+config USR_LIB_AES_ALGO_ANSSI_UNMASKED
+  default n
+  select USR_LIB_RNG
+  bool "Embed AES ANSSI Unmasked"
+
+config USR_LIB_AES_ALGO_CRYP_SUPPORT
+  default n
+  bool "Embed AES HW CRYP Support"
+
+choice
+  prompt "CRYP support type"
+  default USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
+config USR_LIB_AES_ALGO_CRYP_SUPPORT_POLL
+  depends on USR_LIB_AES_ALGO_CRYP_SUPPORT
+  bool "CRYP support in poll mode"
+config USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
+  depends on USR_LIB_AES_ALGO_CRYP_SUPPORT
+  bool "CRYP support in DMA mode"
+endchoice
+
+endmenu
+
+
