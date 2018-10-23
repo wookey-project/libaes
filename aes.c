@@ -1,6 +1,8 @@
 /* Top header for AES */
 #include "aes.h"
+#include "api/types.h"
 #include "api/print.h"
+#include "api/syscall.h"
 #include "librng.h"
 
 // FIXME: used for bench (key injection in cryp). to be updated
@@ -12,13 +14,15 @@ uint32_t id_smart = 1;
 int get_random(unsigned char *buf, uint16_t len)
 {
     uint16_t i;
+    uint8_t ret;
 
     /* First, set the buffer to zero */
     memset(buf, 0, len);
 
     /* Generate as much random as necessary */
     for(i = 0; i < sizeof(uint32_t) * (len / sizeof(uint32_t)); i += sizeof(uint32_t)){
-        if(rng_get_random((uint32_t*)(&(buf[i])))){
+        if((ret = sys_get_random((char*)(&(buf[i])), 4))){
+            printf("error while getting random ! ret=%d\n", ret);
             goto err;
         }
     }
@@ -29,7 +33,8 @@ int get_random(unsigned char *buf, uint16_t len)
     /* Handle the remaining bytes */
     if(i < len){
         uint32_t random;
-        if(rng_get_random((&random))){
+        if((ret = sys_get_random(((char*)&random), 4))){
+            printf("error while getting random ! ret=%d\n", ret);
             goto err;
         }
         while(i < len){
