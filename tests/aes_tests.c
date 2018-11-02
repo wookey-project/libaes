@@ -3,10 +3,6 @@
 #include "api/print.h"
 #include "api/types.h"
 #include "api/syscall.h"
-#ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA 
-#include "libdma.h"
-#include "libdma_regs.h"
-#endif
 //#include "api/malloc.h"
 
 
@@ -64,13 +60,11 @@ static volatile unsigned char dma_in_ok = 0;
 static void dma_in_complete(uint8_t irq __attribute__ ((unused)),
                             uint32_t status __attribute__ ((unused)))
 {
-    if (get_reg_value(&status, DMA_HISR_DMEIFx_Msk(DMA2_STREAM_CRYP_IN),
-                      DMA_HISR_DMEIFx_Pos(DMA2_STREAM_CRYP_IN))) {
-        return;
+    if(status & DMA_DIRECT_MODE_ERROR){
+        status_reg.dmain_dm_err = true;
     }
-    if (get_reg_value(&status, DMA_HISR_TEIFx_Msk(DMA2_STREAM_CRYP_IN),
-                      DMA_HISR_TEIFx_Pos(DMA2_STREAM_CRYP_IN))) {
-        return;
+    if(status & DMA_TRANSFER_ERROR){
+        status_reg.dmain_tr_err = true;
     }
 #if 0
     if (get_reg_value(&status, DMA_HISR_HTIFx_Msk(DMA2_STREAM_CRYP_IN),
@@ -95,13 +89,11 @@ static volatile unsigned char dma_out_ok = 0;
 static void dma_out_complete(uint8_t irq __attribute__ ((unused)),
                              uint32_t status __attribute__ ((unused)))
 {
-    if (get_reg_value(&status, DMA_HISR_DMEIFx_Msk(DMA2_STREAM_CRYP_OUT),
-                      DMA_HISR_DMEIFx_Pos(DMA2_STREAM_CRYP_OUT))) {
-        return;
+    if(status & DMA_DIRECT_MODE_ERROR){
+        status_reg.dmain_dm_err = true;
     }
-    if (get_reg_value(&status, DMA_HISR_TEIFx_Msk(DMA2_STREAM_CRYP_OUT),
-                      DMA_HISR_TEIFx_Pos(DMA2_STREAM_CRYP_OUT))) {
-        return;
+    if(status & DMA_TRANSFER_ERROR){
+        status_reg.dmain_tr_err = true;
     }
 
 #if 0
