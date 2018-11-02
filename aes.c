@@ -6,10 +6,6 @@
 #include "api/random.h"
 #include "librng.h"
 
-// FIXME: used for bench (key injection in cryp). to be updated
-uint32_t id_smart = 1;
-
-
 #ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT
 static enum crypto_key_len match_crypto_key_len(enum aes_key_len key_len)
 {
