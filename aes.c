@@ -293,7 +293,7 @@ int aes_init(aes_context * aes, const unsigned char *key,
         case AES_HARD_NODMA: {
         aes->hard_context = NULL;
             //FIXME [PTh]: Old: crypto_init(key, match_crypto_key_len(key_len), iv, match_crypto_mode(mode), match_crypto_dir(dir));
-            cryp_init(key, match_crypto_key_len(key_len), iv,
+            cryp_init(key, match_crypto_key_len(key_len), iv, 16,
                       match_crypto_mode(mode), match_crypto_dir(dir));
             break;
         }
@@ -306,7 +306,7 @@ int aes_init(aes_context * aes, const unsigned char *key,
                 goto err;
             }
             //FIXME [PTh]: Old:crypto_init(key, match_crypto_key_len(key_len), iv, match_crypto_mode(mode), match_crypto_dir(dir));
-            cryp_init(key, match_crypto_key_len(key_len), iv,
+            cryp_init(key, match_crypto_key_len(key_len), iv, 16,
                       match_crypto_mode(mode), match_crypto_dir(dir));
             aes->dma_in_complete = dma_in_complete;
             aes->dma_out_complete = dma_out_complete;
