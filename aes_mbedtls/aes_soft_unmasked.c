@@ -31,7 +31,8 @@
 
 #if defined(MBEDTLS_AES_C)
 
-#include <string.h>
+#include "api/string.h"
+#include "api/print.h"
 
 
 #if !defined(MBEDTLS_AES_ALT)

@@ -12,6 +12,8 @@ VERSION = 1
 # use an app-specific build dir
 APP_BUILD_DIR = $(BUILD_DIR)/libs/$(LIB_NAME)
 
+# fixme, asm not yet llvm-compatible
+#CC := $(CROSS_COMPILE)gcc
 CFLAGS := $(DEBUG_CFLAGS) $(WARN_CFLAGS) $(EMBED_CFLAGS) $(AFLAGS)
 CFLAGS += -ffreestanding -ffunction-sections -fdata-sections
 CFLAGS += -I../common -I../std -I../libecc/src
@@ -76,16 +78,7 @@ lib: $(APP_BUILD_DIR)/$(LIB_FULL_NAME)
 $(APP_BUILD_DIR)/%.o: %.c
 	$(call if_changed,cc_o_c)
 
-$(ASM_OBJ): $(ASM)
-	$(call if_changed,cc_o_c)
-
-$(APP_BUILD_DIR)/aes_mbedtls/%.o: aes_mbedtls/%.c
-	$(call if_changed,cc_o_c)
-
-$(APP_BUILD_DIR)/aes_anssi/aes_masked/%.o: aes_anssi/aes_masked/%.S
-	$(call if_changed,cc_o_c)
-
-$(APP_BUILD_DIR)/aes_anssi/aes_unmasked/%.o: aes_anssi/aes_unmasked/%.S
+$(APP_BUILD_DIR)/%.o: %.S
 	$(call if_changed,cc_o_c)
 
 # lib

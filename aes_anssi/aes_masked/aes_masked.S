@@ -45,6 +45,11 @@ MEND
 	movt \reg, #:upper16:\val
 .endm
 #endif
+.syntax unified
+.cpu cortex-m4
+.fpu softvfp
+.thumb
+
 
 
 	DATASECT
@@ -801,13 +806,13 @@ anssi_aes_masked MYLABEL
 	push.w {r4-r12}
 	push {r3}						// push @result
 	
-	bl.w Load_data
+	bl Load_data
 		
-	bl.w Compute_GTab
+	bl Compute_GTab
 	 
     push {r1}						// push @key
 	
-    bl.w Compute_Affine_sboxMasked	// Computation of the masked Sbox 
+    bl Compute_Affine_sboxMasked	// Computation of the masked Sbox 
 
     // Multiplication
     movw r3, #:lower16:state		// r3 = @state 
@@ -856,7 +861,7 @@ count   SETA    count+1
 	stm r1, {r5, r6, r10, r12}
 		
 	//AddRoundKey
-	bl.w Add_roundkey			// state[i] = state[i] xor rmult* key_state[i]
+	bl Add_roundkey			// state[i] = state[i] xor rmult* key_state[i]
 
 	mov r0, #0xA				// r0 = 10 (round ctr)	
 			
@@ -889,11 +894,11 @@ count   SETA    count+1
 #endif
 	sub r3, #0x10				// come back to the beginning of state
 	
-	bl.w SubBytesWithMask 		// state[i] = SB(state[i]) xor Rout
+	bl SubBytesWithMask 		// state[i] = SB(state[i]) xor Rout
 
 	sub r3, #0x10				// come back to the beginning of state
 	
-	bl.w ShiftRowsWithMasked 	// state[i]= SR(state[i]) xor SR(state2[i])
+	bl ShiftRowsWithMasked 	// state[i]= SR(state[i]) xor SR(state2[i])
 
 	cmp r0, #0x1				// The last round do not process MixColumns
 	
@@ -913,13 +918,13 @@ count   SETA    count+1
 No_Mix MYLABEL
 	mov r6, r1					// r6 = @key_state[rnd*16*8] 			
 	
-	bl.w KeyExpansion			// Generation of the next subkey
+	bl KeyExpansion			// Generation of the next subkey
 
 	add r1, #0x10				// r1 = @key_state[rnd*16*8] +16*8 =@key_state[(rnd+1)*16*8] Go to the next @key in key state
 	
 	mov r8,r1					// r8 = @key_state[(rnd+1)*16*8] 
 	
-	bl.w Add_roundkey 			// state[i] = state[i] xor k_j[i]
+	bl Add_roundkey 			// state[i] = state[i] xor k_j[i]
 
 	
 	subs r0, #0x1

@@ -64,8 +64,9 @@ static unsigned int get_bit_len(enum aes_key_len key_len)
 
 /* This is the main AES core dispatcher, useful for software versions and useful for handling modes */
 static int aes_core(aes_context * aes,
-                    const unsigned char data_in[AES_BLOCK_SIZE],
-                    unsigned char data_out[AES_BLOCK_SIZE], enum aes_dir dir __attribute__((unused)))
+                    const unsigned char data_in[AES_BLOCK_SIZE] __attribute__((unused)),
+                    unsigned char data_out[AES_BLOCK_SIZE] __attribute__((unused)),
+                    enum aes_dir dir __attribute__((unused)))
 {
     switch (aes->type) {
 
@@ -112,8 +113,6 @@ static int aes_core(aes_context * aes,
 #endif
     default:
         /* in case no pure software aes is supported, avoid unused */
-        data_in = data_in;
-        data_out = data_out;
         goto err;
     }
 
