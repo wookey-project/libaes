@@ -14,7 +14,6 @@ APP_BUILD_DIR = $(BUILD_DIR)/libs/$(LIB_NAME)
 
 # fixme, asm not yet llvm-compatible
 #CC := $(CROSS_COMPILE)gcc
-CFLAGS := $(DEBUG_CFLAGS) $(WARN_CFLAGS) $(EMBED_CFLAGS) $(AFLAGS)
 CFLAGS += -ffreestanding -ffunction-sections -fdata-sections
 CFLAGS += -I../common -I../std -I../libecc/src
 CFLAGS += -I$(PROJ_FILES)/include/generated -I. -Iarch/cores/$(CONFIG_ARCH) -I$(PROJ_FILES)
