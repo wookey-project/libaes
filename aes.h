@@ -12,9 +12,6 @@
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
 #include "aes_anssi/aes_masked/aes_masked.h"
 #endif
-#ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_UNMASKED
-#include "aes_anssi/aes_unmasked/aes_unmasked.h"
-#endif
 
 //#include "product.h"
 /* Check if we have a hardware AES */
@@ -27,7 +24,6 @@
 #define AES_BLOCK_SIZE	16
 /* The AES type:
  *	- Pure software unprotected AES (from mbedtls).
- * 	- Pure software unprotected AES (assembly from ANSSI).
  *	- Pure software masked AES (assembly from ANSSI).
  *	- Hardware AES without DMA support.
  *	- Hardware AES with DMA support.
@@ -37,9 +33,6 @@ enum aes_type {
     AES_SOFT_MBEDTLS = 0,
 #endif
 #if defined(__arm__)
-#ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_UNMASKED
-    AES_SOFT_ANSSI_UNMASKED = 1,
-#endif
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
     AES_SOFT_ANSSI_MASKED = 2,
 #endif

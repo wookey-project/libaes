@@ -24,11 +24,8 @@ config USR_LIB_AES_ALGO_MBEDTLS
   bool "Embed AES MBEDTLS support"
 config USR_LIB_AES_ALGO_ANSSI_MASKED
   default n
-  bool "Embed AES ANSSI masked"
-config USR_LIB_AES_ALGO_ANSSI_UNMASKED
-  default n
   select USR_LIB_RNG
-  bool "Embed AES ANSSI Unmasked"
+  bool "Embed AES ANSSI masked"
 
 config USR_LIB_AES_ALGO_CRYP_SUPPORT
   default n
