@@ -88,11 +88,6 @@ static int aes_core(aes_context * aes,
 #endif
 #if defined(__arm__)
         /* ANSSI AES are only for the ARM architecture (they are in assemby) */
-#ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_UNMASKED
-    case AES_SOFT_ANSSI_UNMASKED:
-        anssi_aes_unmasked(data_in, aes->anssi_unmasked_context.key, data_out);
-        break;
-#endif
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
     case AES_SOFT_ANSSI_MASKED:
         anssi_aes_masked(data_in, aes->anssi_masked_context.key,

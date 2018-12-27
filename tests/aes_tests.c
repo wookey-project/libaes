@@ -26,12 +26,6 @@ const aes_desc available_aes[] = {
      },
 #endif
 #if defined(__arm__)
-#ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_UNMASKED
-    {
-     .name = "AES_SOFT_ANSSI_UNMASKED",
-     .type = AES_SOFT_ANSSI_UNMASKED,
-     },
-#endif
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
     {
      .name = "AES_SOFT_ANSSI_MASKED",
