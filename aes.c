@@ -62,12 +62,12 @@ static unsigned int get_bit_len(enum aes_key_len key_len)
 }
 
 /* This is the main AES core dispatcher, useful for software versions and useful for handling modes */
-static int aes_core(aes_context * aes,
+static int aes_core(aes_context * aes_ctx,
                     const unsigned char data_in[AES_BLOCK_SIZE] __attribute__((unused)),
                     unsigned char data_out[AES_BLOCK_SIZE] __attribute__((unused)),
                     enum aes_dir dir __attribute__((unused)))
 {
-    switch (aes->type) {
+    switch (aes_ctx->type) {
 
 #ifdef CONFIG_USR_LIB_AES_ALGO_MBEDTLS
     case AES_SOFT_MBEDTLS:{
@@ -80,7 +80,7 @@ static int aes_core(aes_context * aes,
                 goto err;
             }
             if (mbedtls_aes_crypt_ecb
-                (&(aes->mbedtls_context), gnutls_dir, data_in, data_out)) {
+                (&(aes_ctx->mbedtls_context), gnutls_dir, data_in, data_out)) {
                 goto err;
             }
         }
@@ -90,8 +90,19 @@ static int aes_core(aes_context * aes,
         /* ANSSI AES are only for the ARM architecture (they are in assemby) */
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
     case AES_SOFT_ANSSI_MASKED:
-        anssi_aes_masked(data_in, aes->anssi_masked_context.key,
-                         aes->anssi_masked_context.masks, data_out);
+	if(dir == AES_ENCRYPT){
+		if(aes(MODE_ENC, &(aes_ctx->anssi_masked_context), NULL, 0, data_in, 16, data_out, 16) != NO_ERROR){
+			goto err;
+		}
+	}
+	else if (dir == AES_DECRYPT) {
+		if(aes(MODE_DEC, &(aes_ctx->anssi_masked_context), NULL, 0, data_in, 16, data_out, 16) != NO_ERROR){
+			goto err;
+		}
+	}
+	else{
+		goto err;
+	}
         break;
 #endif
 #ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT
@@ -116,31 +127,31 @@ static int aes_core(aes_context * aes,
 }
 
 /** AES modes **/
-static void increment_iv(aes_context * aes)
+static void increment_iv(aes_context * aes_ctx)
 {
     int j;
     /* Increment counter */
     for (j = AES_BLOCK_SIZE; j > 0; j--) {
-        if (++aes->iv[j - 1] != 0) {
+        if (++aes_ctx->iv[j - 1] != 0) {
             break;
         }
     }
 
 }
 
-static void add_iv(aes_context * aes, unsigned int to_add)
+static void add_iv(aes_context * aes_ctx, unsigned int to_add)
 {
     unsigned int i;
     for (i = 0; i < to_add; i++) {
-        increment_iv(aes);
+        increment_iv(aes_ctx);
     }
 }
 
-static int aes_mode(aes_context * aes, const unsigned char *data_in,
+static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
                     unsigned char *data_out, unsigned int data_len)
 {
 
-    switch (aes->mode) {
+    switch (aes_ctx->mode) {
     case ECB:{
             unsigned int i;
             if (data_len % AES_BLOCK_SIZE != 0) {
@@ -148,8 +159,8 @@ static int aes_mode(aes_context * aes, const unsigned char *data_in,
             }
             for (i = 0; i < data_len / AES_BLOCK_SIZE; i++) {
                 if (aes_core
-                    (aes, data_in + (AES_BLOCK_SIZE * i),
-                     data_out + (AES_BLOCK_SIZE * i), aes->dir)) {
+                    (aes_ctx, data_in + (AES_BLOCK_SIZE * i),
+                     data_out + (AES_BLOCK_SIZE * i), aes_ctx->dir)) {
                     goto err;
                 }
             }
@@ -159,32 +170,32 @@ static int aes_mode(aes_context * aes, const unsigned char *data_in,
             if (data_len % AES_BLOCK_SIZE != 0) {
                 goto err;
             }
-            if (aes->dir == AES_ENCRYPT) {
+            if (aes_ctx->dir == AES_ENCRYPT) {
                 unsigned int i, j;
                 uint8_t iv_tmp[AES_BLOCK_SIZE];
                 uint8_t tmp[AES_BLOCK_SIZE];
-                memcpy(iv_tmp, aes->iv, sizeof(iv_tmp));
+                memcpy(iv_tmp, aes_ctx->iv, sizeof(iv_tmp));
                 for (i = 0; i < data_len / AES_BLOCK_SIZE; i++) {
                     for (j = 0; j < AES_BLOCK_SIZE; j++) {
                         tmp[j] = data_in[(AES_BLOCK_SIZE * i) + j] ^ iv_tmp[j];
                     }
                     if (aes_core
-                        (aes, tmp, data_out + (AES_BLOCK_SIZE * i), aes->dir)) {
+                        (aes_ctx, tmp, data_out + (AES_BLOCK_SIZE * i), aes_ctx->dir)) {
                         goto err;
                     }
                     memcpy(iv_tmp, data_out + (AES_BLOCK_SIZE * i),
                            sizeof(iv_tmp));
                 }
-            } else if (aes->dir == AES_DECRYPT) {
+            } else if (aes_ctx->dir == AES_DECRYPT) {
                 unsigned int i, j;
                 uint8_t iv_tmp[AES_BLOCK_SIZE];
                 uint8_t tmp[AES_BLOCK_SIZE];
-                memcpy(iv_tmp, aes->iv, sizeof(iv_tmp));
+                memcpy(iv_tmp, aes_ctx->iv, sizeof(iv_tmp));
                 for (i = 0; i < data_len / AES_BLOCK_SIZE; i++) {
                     memcpy(tmp, data_in + (AES_BLOCK_SIZE * i), sizeof(tmp));
                     if (aes_core
-                        (aes, data_in + (AES_BLOCK_SIZE * i),
-                         data_out + (AES_BLOCK_SIZE * i), aes->dir)) {
+                        (aes_ctx, data_in + (AES_BLOCK_SIZE * i),
+                         data_out + (AES_BLOCK_SIZE * i), aes_ctx->dir)) {
                         goto err;
                     }
                     for (j = 0; j < AES_BLOCK_SIZE; j++) {
@@ -200,19 +211,19 @@ static int aes_mode(aes_context * aes, const unsigned char *data_in,
     case CTR:{
             unsigned int i;
             int offset;
-            offset = aes->last_off;
+            offset = aes_ctx->last_off;
             for (i = 0; i < data_len; i++) {
                 if (offset == 0) {
                     if (aes_core
-                        (aes, aes->iv, aes->last_block_stream, AES_ENCRYPT)) {
+                        (aes_ctx, aes_ctx->iv, aes_ctx->last_block_stream, AES_ENCRYPT)) {
                         goto err;
                     }
-                    increment_iv(aes);
+                    increment_iv(aes_ctx);
                 }
-                data_out[i] = data_in[i] ^ aes->last_block_stream[offset];
+                data_out[i] = data_in[i] ^ aes_ctx->last_block_stream[offset];
                 offset = (offset + 1) % AES_BLOCK_SIZE;
             }
-            aes->last_off = offset;
+            aes_ctx->last_off = offset;
             break;
         }
     default:
@@ -224,42 +235,42 @@ static int aes_mode(aes_context * aes, const unsigned char *data_in,
     return -1;
 }
 
-int aes_init(aes_context * aes, const unsigned char *key,
+int aes_init(aes_context * aes_ctx, const unsigned char *key,
              enum aes_key_len key_len, const unsigned char *iv,
              enum aes_mode mode, enum aes_dir dir, enum aes_type type,
              void (*dma_in_complete) (void), void (*dma_out_complete) (void),
              int dma_in_desc, int dma_out_desc)
 {
-    if (aes == NULL) {
+    if (aes_ctx == NULL) {
         goto err;
     }
-    aes->type = type;
-    aes->key_len = key_len;
-    aes->mode = mode;
-    aes->dir = dir;
-    aes->last_off = 0;
-    memset(aes->last_block_stream, 0, sizeof(aes->last_block_stream));
+    aes_ctx->type = type;
+    aes_ctx->key_len = key_len;
+    aes_ctx->mode = mode;
+    aes_ctx->dir = dir;
+    aes_ctx->last_off = 0;
+    memset(aes_ctx->last_block_stream, 0, sizeof(aes_ctx->last_block_stream));
 
     if (iv != NULL) {
-        memcpy(aes->iv, iv, AES_BLOCK_SIZE);
+        memcpy(aes_ctx->iv, iv, AES_BLOCK_SIZE);
     } else {
-        memset(aes->iv, 0, AES_BLOCK_SIZE);
+        memset(aes_ctx->iv, 0, AES_BLOCK_SIZE);
     }
-    switch (aes->type) {
+    switch (aes_ctx->type) {
 #ifdef CONFIG_USR_LIB_AES_ALGO_MBEDTLS
       case AES_SOFT_MBEDTLS: {
-        switch (aes->mode) {
+        switch (aes_ctx->mode) {
         case ECB:
         case CBC:
             /* Use the software unprotected mbedtls AES */
             if (dir == AES_ENCRYPT) {
                 if (mbedtls_aes_setkey_enc
-                    (&(aes->mbedtls_context), key, get_bit_len(aes->key_len))) {
+                    (&(aes_ctx->mbedtls_context), key, get_bit_len(aes_ctx->key_len))) {
                     goto err;
                 }
             } else if (dir == AES_DECRYPT) {
                 if (mbedtls_aes_setkey_dec
-                    (&(aes->mbedtls_context), key, get_bit_len(aes->key_len))) {
+                    (&(aes_ctx->mbedtls_context), key, get_bit_len(aes_ctx->key_len))) {
                     goto err;
                 }
             } else {
@@ -269,7 +280,7 @@ int aes_init(aes_context * aes, const unsigned char *key,
             /* Stream mode only use encryption key schedule */
         case CTR:
             if (mbedtls_aes_setkey_enc
-                (&(aes->mbedtls_context), key, get_bit_len(aes->key_len))) {
+                (&(aes_ctx->mbedtls_context), key, get_bit_len(aes_ctx->key_len))) {
                 goto err;
             }
             break;
@@ -280,20 +291,20 @@ int aes_init(aes_context * aes, const unsigned char *key,
       }
 #endif
 #if defined(__arm__)
-# if CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT
+# ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT
     /* Hardware AES */
-#  if CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_POLL
+#  ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_POLL
         case AES_HARD_NODMA: {
-        aes->hard_context = NULL;
+        aes_ctx->hard_context = NULL;
             //FIXME [PTh]: Old: crypto_init(key, match_crypto_key_len(key_len), iv, match_crypto_mode(mode), match_crypto_dir(dir));
             cryp_init(key, match_crypto_key_len(key_len), iv, 16,
                       match_crypto_mode(mode), match_crypto_dir(dir));
             break;
         }
 #  endif
-#  if CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
+#  ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
         case AES_HARD_DMA: {
-        aes->hard_context = NULL;
+        aes_ctx->hard_context = NULL;
             if ((dma_in_complete == NULL) || (dma_out_complete == NULL)) {
                 printf("dma in complete or out complete is NULL\n");
                 goto err;
@@ -301,34 +312,28 @@ int aes_init(aes_context * aes, const unsigned char *key,
             //FIXME [PTh]: Old:crypto_init(key, match_crypto_key_len(key_len), iv, match_crypto_mode(mode), match_crypto_dir(dir));
             cryp_init(key, match_crypto_key_len(key_len), iv, 16,
                       match_crypto_mode(mode), match_crypto_dir(dir));
-            aes->dma_in_complete = dma_in_complete;
-            aes->dma_out_complete = dma_out_complete;
+            aes_ctx->dma_in_complete = dma_in_complete;
+            aes_ctx->dma_out_complete = dma_out_complete;
             cryp_init_dma(dma_in_complete, dma_out_complete, dma_in_desc, dma_out_desc);
       break;
       }
 #  endif
 # endif
-# if CONFIG_USR_LIB_AES_ALGO_ANSSI_UNMASKED
-    case AES_SOFT_ANSSI_UNMASKED: {
-        /* Only the encryption is implemented for now ... Except for CTR mode where encryption and decryption are equivalent */
-       if((aes->dir == AES_DECRYPT) && (aes->mode != CTR)){
-            goto err;
-        }
-        memcpy(aes->anssi_unmasked_context.key, key,
-               get_bit_len(aes->key_len) / 8);
-        break;
-    }
-# endif
-# if CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
+# ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
     case AES_SOFT_ANSSI_MASKED: {
-        /* Only the encryption is implemented for now ... Except for CTR mode where encryption and decryption are equivalent */
-        if((aes->dir == AES_DECRYPT) && (aes->mode != CTR)){
-            goto err;
-        }
-        memcpy(aes->anssi_masked_context.key, key,
-               get_bit_len(aes->key_len) / 8);
-        /* Generate random values for the masks */
-        get_random(aes->anssi_masked_context.masks, sizeof(aes->anssi_masked_context.masks));
+	if(dir == AES_ENCRYPT){
+		if(aes(MODE_KEYINIT|MODE_AESINIT_ENC, &(aes_ctx->anssi_masked_context), key, 16, NULL, 0, NULL, 0) != NO_ERROR){
+			goto err;
+		}
+	}
+	else if (dir == AES_DECRYPT){
+		if(aes(MODE_KEYINIT|MODE_AESINIT_DEC, &(aes_ctx->anssi_masked_context), key, 16, NULL, 0, NULL, 0) != NO_ERROR){
+			goto err;
+		}
+	}
+	else{
+		goto err;
+	}
         break;
      }
 # endif
@@ -342,16 +347,15 @@ int aes_init(aes_context * aes, const unsigned char *key,
     return -1;
 }
 
-// FIXME - change function name
-int aes(aes_context * aes, const unsigned char *data_in,
+int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
         unsigned char *data_out, unsigned int data_len,
         int dma_in_desc, int dma_out_desc)
 {
-    if (aes == NULL) {
+    if (aes_ctx == NULL) {
         goto err;
     }
     /* Hardware AES */
-    switch (aes->type) {
+    switch (aes_ctx->type) {
 #if defined(__arm__)
 # ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT
 #  ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_POLL
@@ -360,17 +364,17 @@ int aes(aes_context * aes, const unsigned char *data_in,
 #  ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
     case AES_HARD_DMA:
 #  endif
-        if (aes->mode == CTR) {
+        if (aes_ctx->mode == CTR) {
             unsigned int i, bytes, hardware_bytes_to_encrypt;
             uint8_t last_block[AES_BLOCK_SIZE];
             /* CTR mode supports unaligned plaintext, but the hardware does not support this ... 
              */
             bytes = 0;
-            if (aes->last_off != 0) {
-                for (i = aes->last_off; i < AES_BLOCK_SIZE; i++) {
-                    data_out[i] = data_in[i] ^ aes->last_block_stream[i];
+            if (aes_ctx->last_off != 0) {
+                for (i = aes_ctx->last_off; i < AES_BLOCK_SIZE; i++) {
+                    data_out[i] = data_in[i] ^ aes_ctx->last_block_stream[i];
                     bytes++;
-                    aes->last_off++;
+                    aes_ctx->last_off++;
                     if (bytes > data_len) {
                         goto ctr_finished;
                     }
@@ -387,7 +391,7 @@ int aes(aes_context * aes, const unsigned char *data_in,
                 hardware_bytes_to_encrypt = data_len - bytes;
             }
 #  ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_POLL
-            if (aes->type == AES_HARD_NODMA) {
+            if (aes_ctx->type == AES_HARD_NODMA) {
                 cryp_do_no_dma((data_in + bytes), (data_out + bytes),
                                hardware_bytes_to_encrypt);
                 /* Increment our IV by as many blocks as needed */
@@ -395,18 +399,18 @@ int aes(aes_context * aes, const unsigned char *data_in,
             }
 #  endif
 #  ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
-            if (aes->type == AES_HARD_DMA) {
-                //FIXME: encrypt_dma(data_in + bytes, data_out + bytes, hardware_bytes_to_encrypt, aes->dma_in_complete, aes->dma_out_complete);
+            if (aes_ctx->type == AES_HARD_DMA) {
+                //FIXME: encrypt_dma(data_in + bytes, data_out + bytes, hardware_bytes_to_encrypt, aes_ctx->dma_in_complete, aes_ctx->dma_out_complete);
                                 /* Increment our IV by as many blocks as needed */
                 // old cryp_do_dma (without fastcall)
 
                 cryp_do_dma(data_in + bytes, data_out + bytes,
                             hardware_bytes_to_encrypt, dma_in_desc, dma_out_desc);
-                add_iv(aes, hardware_bytes_to_encrypt / AES_BLOCK_SIZE);
+                add_iv(aes_ctx, hardware_bytes_to_encrypt / AES_BLOCK_SIZE);
             }
 #  endif
             if (data_len - bytes - hardware_bytes_to_encrypt == 0) {
-                aes->last_off = 0;
+                aes_ctx->last_off = 0;
                 goto ctr_finished;
             }
  ctr_last_block:
@@ -415,8 +419,8 @@ int aes(aes_context * aes, const unsigned char *data_in,
             memcpy(last_block, data_in + bytes + hardware_bytes_to_encrypt,
                    data_len - bytes - hardware_bytes_to_encrypt);
 #  ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_POLL
-            if (aes->type == AES_HARD_NODMA) {
-                //FIXME: encrypt_no_dma(last_block, aes->last_block_stream, AES_BLOCK_SIZE);
+            if (aes_ctx->type == AES_HARD_NODMA) {
+                //FIXME: encrypt_no_dma(last_block, aes_ctx->last_block_stream, AES_BLOCK_SIZE);
                 /* Increment our IV by one block */
                 cryp_do_no_dma((data_in + bytes), (data_out + bytes),
                                hardware_bytes_to_encrypt);
@@ -426,38 +430,38 @@ int aes(aes_context * aes, const unsigned char *data_in,
             }
 #  endif
 #  ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
-            if (aes->type == AES_HARD_DMA) {
-                //FIXME: encrypt_dma(last_block, aes->last_block_stream, AES_BLOCK_SIZE, aes->dma_in_complete, aes->dma_out_complete);
+            if (aes_ctx->type == AES_HARD_DMA) {
+                //FIXME: encrypt_dma(last_block, aes_ctx->last_block_stream, AES_BLOCK_SIZE, aes_ctx->dma_in_complete, aes_ctx->dma_out_complete);
                 cryp_do_dma(data_in + bytes, data_out + bytes,
                             hardware_bytes_to_encrypt, dma_in_desc, dma_out_desc);
                 /* Increment our IV by as many blocks as needed */
                 /* Increment our IV by one block */
-                add_iv(aes, 1);
+                add_iv(aes_ctx, 1);
             } else {
                 goto err;
             }
 #  endif
             for (i = 0; i < (data_len - bytes - hardware_bytes_to_encrypt); i++) {
                 data_out[bytes + hardware_bytes_to_encrypt + i] =
-                    aes->last_block_stream[i];
-                aes->last_off++;
+                    aes_ctx->last_block_stream[i];
+                aes_ctx->last_off++;
             }
             /* Get back our last block key stream */
             for (i = 0; i < AES_BLOCK_SIZE; i++) {
-                aes->last_block_stream[i] ^= last_block[i];
+                aes_ctx->last_block_stream[i] ^= last_block[i];
             }
  ctr_finished:
             break;
         } else {
 #  ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_POLL
-            if (aes->type == AES_HARD_NODMA) {
+            if (aes_ctx->type == AES_HARD_NODMA) {
                 //FIXME: encrypt_no_dma(data_in, data_out, data_len);
                 cryp_do_no_dma(data_in, data_out, data_len);
             }
 #  endif
 #  ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
-            if (aes->type == AES_HARD_DMA) {
-                //FIXME: encrypt_dma(data_in, data_out, data_len, aes->dma_in_complete, aes->dma_out_complete);
+            if (aes_ctx->type == AES_HARD_DMA) {
+                //FIXME: encrypt_dma(data_in, data_out, data_len, aes_ctx->dma_in_complete, aes_ctx->dma_out_complete);
                 cryp_do_dma(data_in, data_out, data_len, dma_in_desc, dma_out_desc);
             }
 #  endif
@@ -467,19 +471,10 @@ int aes(aes_context * aes, const unsigned char *data_in,
         }
         break;
 # endif
-# ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_UNMASKED
-    case AES_SOFT_ANSSI_UNMASKED:
-        /* Use the software unmasked AES */
-        if (aes_mode(aes, data_in, data_out, data_len)) {
-            goto err;
-        }
-        break;
-
-# endif
 # ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
    case AES_SOFT_ANSSI_MASKED:
-         /* Use the software unmasked AES */
-        if (aes_mode(aes, data_in, data_out, data_len)) {
+         /* Use the software masked AES */
+        if (aes_mode(aes_ctx, data_in, data_out, data_len)) {
             goto err;
         }
         break;
@@ -488,7 +483,7 @@ int aes(aes_context * aes, const unsigned char *data_in,
 #ifdef CONFIG_USR_LIB_AES_ALGO_MBEDTLS
     case AES_SOFT_MBEDTLS:
         /* Use the software unmasked AES */
-        if (aes_mode(aes, data_in, data_out, data_len)) {
+        if (aes_mode(aes_ctx, data_in, data_out, data_len)) {
             goto err;
         }
         break;
