@@ -10,7 +10,7 @@
 #endif
 
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
-#include "aes_anssi/aes_masked/aes_masked.h"
+#include "aes_anssi/aes_masked/aes.h"
 #endif
 
 //#include "product.h"
@@ -34,14 +34,14 @@ enum aes_type {
 #endif
 #if defined(__arm__)
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
-    AES_SOFT_ANSSI_MASKED = 2,
+    AES_SOFT_ANSSI_MASKED = 1,
 #endif
 #ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT
 #ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_POLL
-    AES_HARD_NODMA = 3,
+    AES_HARD_NODMA = 2,
 #endif
 #ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
-    AES_HARD_DMA = 4
+    AES_HARD_DMA = 3
 #endif
 #endif
 #endif
@@ -72,12 +72,9 @@ typedef struct {
         mbedtls_aes_context mbedtls_context;
 #endif
 #if defined(__arm__)
-        /* ANSSI assembly contexts, mainly holding our random data and key */
-#ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_UNMASKED
-        anssi_aes_unmasked_context anssi_unmasked_context;
-#endif
+        /* ANSSI assembly contexts */
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
-        anssi_aes_masked_context anssi_masked_context;
+        STRUCT_AES anssi_masked_context;
 #endif
 #ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT
         /* CRYP hardware context */
@@ -104,7 +101,7 @@ int aes_init(aes_context * aes_ctx, const unsigned char *key,
              enum aes_mode mode, enum aes_dir dir, enum aes_type type,
              void (*dma_in_complete) (void), void (*dma_out_complete) (void),
              int dma_in_desc, int dma_out_desc);
-int aes(aes_context * aes_ctx, const unsigned char *data_in,
+int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
         unsigned char *data_out, unsigned int data_len,
         int dma_in_desc, int dma_out_desc);
 #ifdef CONFIG_USR_LIB_AES_SELFTESTS
