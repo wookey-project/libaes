@@ -28,6 +28,7 @@ BUILD_DIR ?= $(PROJ_FILE)build
 SRC_DIR = .
 ALLSRC := $(wildcard $(SRC_DIR)/*.c)
 ALLSRC += $(wildcard $(SRC_DIR)/**/*.c)
+ALLSRC += $(wildcard $(SRC_DIR)/**/**/*.c)
 
 # if AES test benchmark is not activated,
 # AES tests are not compiled-in

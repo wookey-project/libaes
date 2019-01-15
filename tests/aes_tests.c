@@ -556,7 +556,7 @@ int do_aes_test_vectors(int dma_in_desc, int dma_out_desc)
             }
 #endif
 
-            if (aes(&ctx, aes_tests[i]->msg, tmp, aes_tests[i]->exp_out_len,
+            if (aes_exec(&ctx, aes_tests[i]->msg, tmp, aes_tests[i]->exp_out_len,
                     dma_in_desc, dma_out_desc)) {
                 printf("[AES self tests] aes %s: %s exec failed :-(\n",
                        available_aes[j].name, aes_tests[i]->name);
@@ -780,7 +780,7 @@ int do_aes_test_performance(int dma_in_desc, int dma_out_desc)
             start_crypt = get_cycles();
 
             for(uint32_t z = 0; z < 10000; ++z) {
-                if (aes(&ctx, msg, msg, possible_aes_perf_case[i].msg_len, dma_in_desc, dma_out_desc)) {
+                if (aes_exec(&ctx, msg, msg, possible_aes_perf_case[i].msg_len, dma_in_desc, dma_out_desc)) {
                     printf("[AES perf tests] %s: %s crypto failed :-(\n",
                             available_aes[j].name, possible_aes_perf_case[i].name);
                     //if(msg){
