@@ -12,13 +12,13 @@ VERSION = 1
 # use an app-specific build dir
 APP_BUILD_DIR = $(BUILD_DIR)/libs/$(LIB_NAME)
 
+CFLAGS += $(LIBS_CFLAGS)
 # fixme, asm not yet llvm-compatible
-#CC := $(CROSS_COMPILE)gcc
 CFLAGS += -ffreestanding -ffunction-sections -fdata-sections
 CFLAGS += -I../common -I../std -I../libecc/src
 CFLAGS += -I$(PROJ_FILES)/include/generated -I. -Iarch/cores/$(CONFIG_ARCH) -I$(PROJ_FILES)
 CFLAGS += $(APPS_CFLAGS)
-CFLAGS += -MMD -MP
+CFLAGS += -MMD -MP -Os
 
 LDFLAGS += -fno-builtin -nostdlib -nostartfiles
 LD_LIBS += -lsign -L$(BUILD_DIR)
