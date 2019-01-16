@@ -91,12 +91,12 @@ static int aes_core(aes_context * aes_ctx,
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
     case AES_SOFT_ANSSI_MASKED:
 	if(dir == AES_ENCRYPT){
-		if(aes(MODE_ENC, &(aes_ctx->anssi_masked_context), NULL, 0, data_in, 16, data_out, 16) != NO_ERROR){
+		if(aes(MODE_ENC, &(aes_ctx->anssi_masked_context), NULL, data_in, data_out, NULL, NULL) != NO_ERROR){
 			goto err;
 		}
 	}
 	else if (dir == AES_DECRYPT) {
-		if(aes(MODE_DEC, &(aes_ctx->anssi_masked_context), NULL, 0, data_in, 16, data_out, 16) != NO_ERROR){
+		if(aes(MODE_DEC, &(aes_ctx->anssi_masked_context), NULL, data_in, data_out, NULL, NULL) != NO_ERROR){
 			goto err;
 		}
 	}
@@ -322,13 +322,20 @@ int aes_init(aes_context * aes_ctx, const unsigned char *key,
 # ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
     case AES_SOFT_ANSSI_MASKED: {
 	if(dir == AES_ENCRYPT){
-		if(aes(MODE_KEYINIT|MODE_AESINIT_ENC, &(aes_ctx->anssi_masked_context), key, 16, NULL, 0, NULL, 0) != NO_ERROR){
+		if(aes(MODE_KEYINIT|MODE_AESINIT_ENC, &(aes_ctx->anssi_masked_context), key, NULL, NULL, NULL, NULL) != NO_ERROR){
 			goto err;
 		}
 	}
 	else if (dir == AES_DECRYPT){
-		if(aes(MODE_KEYINIT|MODE_AESINIT_DEC, &(aes_ctx->anssi_masked_context), key, 16, NULL, 0, NULL, 0) != NO_ERROR){
-			goto err;
+		if(aes_ctx->mode == CTR){
+			if(aes(MODE_KEYINIT|MODE_AESINIT_ENC, &(aes_ctx->anssi_masked_context), key, NULL, NULL, NULL, NULL) != NO_ERROR){
+				goto err;
+			}
+		}
+		else{
+			if(aes(MODE_KEYINIT|MODE_AESINIT_DEC, &(aes_ctx->anssi_masked_context), key, NULL, NULL, NULL, NULL) != NO_ERROR){
+				goto err;
+			}
 		}
 	}
 	else{
