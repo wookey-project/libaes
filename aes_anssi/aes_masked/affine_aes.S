@@ -1007,15 +1007,6 @@ field_division MYLABEL
 	and  r10, r10, #0xFF          			                       // r10 = a - b mod (255)
 	ldrb r7, [r1, r10]			   	                               // r7 = Alog[a - b mod (255)] = z**{a-b mod 255}
 
-	// We suppose r7 !=0
-	cmp r3, #0x0								                   // >254
-	it gt
-	movgt r10, #0xFF
-	it eq
-	moveq r7, #0x0
-	it lt
-	movlt r10, #0x00
-	
 	bx LR
 
 
@@ -1173,7 +1164,7 @@ SET_REPT_INC(count)
 #endif
 	ldrb r6, [r4], #0x4								// r6 = rcon[i] 
 	ldrb r6, [r12, r6]								// r6 = key_ctx_gtab[rcon[i]]
-	strb r6, [r8], #0x4								// store r6 in @key_ctx_rcon_mult[i]
+	str  r6, [r8], #0x4								// store r6 in @key_ctx_rcon_mult[i]
 
 	SET_REPT_CLOSE(Map_in_G_rcon_key)
 
