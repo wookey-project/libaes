@@ -4,9 +4,6 @@ config USR_LIB_AES
   ---help---
   Support for AES implementation in both software and
   hardware mode, depending on the SoC.
-config USR_LIB_AES_CFLAGS
-  string
-  default " -I../../libs/aes " if USR_LIB_AES
 
 menu "libaes features"
   depends on USR_LIB_AES

@@ -16,7 +16,7 @@ CFLAGS += $(LIBS_CFLAGS)
 # fixme, asm not yet llvm-compatible
 CFLAGS += -ffreestanding -ffunction-sections -fdata-sections
 CFLAGS += -I../common -I../std -I../libecc/src
-CFLAGS += -I$(PROJ_FILES)/include/generated -I. -Iarch/cores/$(CONFIG_ARCH) -I$(PROJ_FILES)
+CFLAGS += -I$(PROJ_FILES)/include/generated -Iapi -I. -Iarch/cores/$(CONFIG_ARCH) -I$(PROJ_FILES)
 CFLAGS += $(APPS_CFLAGS)
 CFLAGS += -MMD -MP -Os
 

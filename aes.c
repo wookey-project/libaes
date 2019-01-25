@@ -1,5 +1,5 @@
 /* Top header for AES */
-#include "aes.h"
+#include "api/aes.h"
 #include "api/types.h"
 #include "api/print.h"
 #include "api/syscall.h"
@@ -374,7 +374,7 @@ int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
         if (aes_ctx->mode == CTR) {
             unsigned int i, bytes, hardware_bytes_to_encrypt;
             uint8_t last_block[AES_BLOCK_SIZE];
-            /* CTR mode supports unaligned plaintext, but the hardware does not support this ... 
+            /* CTR mode supports unaligned plaintext, but the hardware does not support this ...
              */
             bytes = 0;
             if (aes_ctx->last_off != 0) {
