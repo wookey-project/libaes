@@ -54,15 +54,15 @@ static volatile unsigned char dma_in_ok = 0;
 static void dma_in_complete(uint8_t irq __attribute__ ((unused)),
                             uint32_t status __attribute__ ((unused)))
 {
+#if 0
     if(status & DMA_DIRECT_MODE_ERROR){
         status_reg.dmain_dm_err = true;
     }
     if(status & DMA_TRANSFER_ERROR){
         status_reg.dmain_tr_err = true;
     }
-#if 0
     if (get_reg_value(&status, DMA_HISR_HTIFx_Msk(DMA2_STREAM_CRYP_IN),
-                      DMA_HISR_HTIFx_Pos(DMA2_STREAM_CRYP_IN)) && 
+                      DMA_HISR_HTIFx_Pos(DMA2_STREAM_CRYP_IN)) &&
        !get_reg_value(&status, DMA_HISR_TCIFx_Msk(DMA2_STREAM_CRYP_IN),
                       DMA_HISR_TCIFx_Pos(DMA2_STREAM_CRYP_IN))) {
         return;
@@ -83,6 +83,7 @@ static volatile unsigned char dma_out_ok = 0;
 static void dma_out_complete(uint8_t irq __attribute__ ((unused)),
                              uint32_t status __attribute__ ((unused)))
 {
+#if 0
     if(status & DMA_DIRECT_MODE_ERROR){
         status_reg.dmain_dm_err = true;
     }
@@ -90,7 +91,6 @@ static void dma_out_complete(uint8_t irq __attribute__ ((unused)),
         status_reg.dmain_tr_err = true;
     }
 
-#if 0
     if (get_reg_value(&status, DMA_HISR_HTIFx_Msk(DMA2_STREAM_CRYP_OUT),
                       DMA_HISR_HTIFx_Pos(DMA2_STREAM_CRYP_OUT)) &&
        !get_reg_value(&status, DMA_HISR_TCIFx_Msk(DMA2_STREAM_CRYP_OUT),
@@ -109,8 +109,8 @@ static void dma_out_complete(uint8_t irq __attribute__ ((unused)),
 #endif
 
 #ifdef CONFIG_USR_LIB_AES_SELFTESTS
-/*** AES test vectors, stolen from NIST 800-38A 
- *  (http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf) 
+/*** AES test vectors, stolen from NIST 800-38A
+ *  (http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38a.pdf)
  *****/
 typedef struct {
     /* Test case name */
@@ -726,7 +726,7 @@ int do_aes_test_performance(int dma_in_desc, int dma_out_desc)
     }
     //TODO: no more needed in userspace
     //init_cycles_count();
-    //start_cycles_count(); 
+    //start_cycles_count();
 
     for (j = 0; j < sizeof(available_aes) / sizeof(aes_desc); j++) {
         aes_context ctx;
@@ -814,7 +814,7 @@ int do_aes_test_performance(int dma_in_desc, int dma_out_desc)
        printf
                 ("%s %s %x %x %x %x %x\n",
                  available_aes[j].name, possible_aes_perf_case[i].name,
-                 diff / 10000, 
+                 diff / 10000,
                  ((diff / ((possible_aes_perf_case[i].msg_len / 16) * 10000))),
                  start, stop,
                  possible_aes_perf_case[i].msg_len);
@@ -874,7 +874,7 @@ int do_aes_test_performance_STLIB(void)
         goto err;
     }
 
-    /* Encrypt i bytes of plaintext. Put the output data in ciphertext and number 
+    /* Encrypt i bytes of plaintext. Put the output data in ciphertext and number
        of written bytes in outSize */
     plaintext = malloc(8192 * sizeof(uint8_t));
     ciphertext = plaintext;
