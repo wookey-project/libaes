@@ -2,6 +2,7 @@
 #include "api/aes.h"
 #include "api/types.h"
 #include "api/print.h"
+#include "api/string.h"
 #include "api/syscall.h"
 #include "api/random.h"
 

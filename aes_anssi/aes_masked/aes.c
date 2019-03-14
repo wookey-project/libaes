@@ -3,7 +3,7 @@
  * \brief TODO
  * \author TODO
  * \version TODO
- * \date 
+ * \date
  *
  * Programme de test pour l'objet de gestion des chaînes de caractères Str_t.
  *
@@ -11,29 +11,30 @@
 
 #include "aes.h"
 #include "printf.h" //LOK
+#include "api/string.h"
 #include "platform.h"
 
 /*
- * \brief  	AES engine for encrypting and decrypting protecting by affine masking 
- * \details The AES engine performs different commands (TODO)  
- *    
- * \param   Mode 			The mode is the command the user wants to execute.        
- * \param   struct_aes      The struct_aes is a strcuture that contains the AES context   
+ * \brief  	AES engine for encrypting and decrypting protecting by affine masking
+ * \details The AES engine performs different commands (TODO)
+ *
+ * \param   Mode 			The mode is the command the user wants to execute.
+ * \param   struct_aes      The struct_aes is a strcuture that contains the AES context
  * \param 	key 			The key is required when MODE_KEYINIT operation in part of the MODE command.
  * \param   key_size 		The key_size is the size in bytes of the key.
  * \param   input     		The input is required when MODE_ENC or MODE_DEC operation is part of the MODE command.
- * \param   input_size      The input_size is the size in bytes of the input.   
+ * \param   input_size      The input_size is the size in bytes of the input.
  * \param  	output 			The output is required when MODE_ENC or MODE_DEC operation is part of the MODE command.
  * \param   output_size   	The output_size is the size in bytes of the output.
  * \return  error   		Return the error if there is one.
-*/ 
+*/
 /*
 LOK: renommer dans affine_aes.s : aes_init en aes_init_enc
 */
 UINT aes(UCHAR Mode, STRUCT_AES* struct_aes, const UCHARp key, const UCHARp input, UCHARp output, const UCHARp random_aes, const UCHARp random_key){
 	UINT ret = NO_ERROR;
 	UCHAR buf[19] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-					 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };	 
+					 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, };
 	// Test if Mode asks for ENC and DEC at the same time or if the Mode as for no operation at all
 	ret |= test_mode(Mode);
 	if (ret != NO_ERROR)
@@ -43,14 +44,14 @@ UINT aes(UCHAR Mode, STRUCT_AES* struct_aes, const UCHARp key, const UCHARp inpu
 	ret |= test_mode_state(Mode, struct_aes->state);
 	if (ret != NO_ERROR){
 		goto err;
-	}	
+	}
 
 	// Test parameters
 	ret |= test_parameter_content(Mode, key, input, output,random_aes,random_key);
 	if (ret != NO_ERROR){
 		goto err;
-	}	
-	
+	}
+
 	// MODE_KEYINIT
 	if ((Mode & (MODE_KEYINIT|MODE_RANDOM_KEY_EXT)) == (MODE_KEYINIT|MODE_RANDOM_KEY_EXT)){
 		memcpy(buf,random_key,19);
@@ -65,23 +66,23 @@ UINT aes(UCHAR Mode, STRUCT_AES* struct_aes, const UCHARp key, const UCHARp inpu
 		/* Zeroize context */
 		memset(&struct_aes->key_context, 0, sizeof(struct_aes->key_context));
 		if (aes_loadKey(&struct_aes->key_context, key, buf)!=0){	// Key initialisation
-			ret = ret | ERR_OP_KEYINIT;	
+			ret = ret | ERR_OP_KEYINIT;
 			goto err;
 		}
 		struct_aes->state = struct_aes->state| STATE_KEYINIT; 	// Update of state
 		struct_aes->ctr_key = 0;
 	}
-	
-	// MODE_AESINIT_ENC or MODE_AESINIT_DEC 
+
+	// MODE_AESINIT_ENC or MODE_AESINIT_DEC
 	if (Mode & MODE_RANDOM_AES_EXT)
-		memcpy(buf,random_aes,19);		
+		memcpy(buf,random_aes,19);
 	else{
 		if (get_random(buf, 19)!=0){							// Generate random value for state masking
 			ret = ret | ERR_OP_GEN_RANDOM_AES;					// return an error if random generation fails
 			goto err;
 		}
 	}
-	
+
 	// MODE_AESINIT_ENC or MODE_AESINIT_DEC
 	if (Mode & MODE_AESINIT_ENC){
 		/* Zeroize context */
@@ -89,9 +90,9 @@ UINT aes(UCHAR Mode, STRUCT_AES* struct_aes, const UCHARp key, const UCHARp inpu
 		if (aes_init_enc(&struct_aes->aes_context, buf)!=0){		// Aes context initialisation
 			ret = ret | ERR_OP_AESINIT;							// return an error if aes initialisation fails
 			goto err;
-		}		
-		struct_aes->state = struct_aes->state| STATE_AESINIT_ENC; 		// Update of state 
-		struct_aes->state = struct_aes->state & (~STATE_AESINIT_DEC); 	// Update of state: remove STATE_AESINIT_DEC from State 
+		}
+		struct_aes->state = struct_aes->state| STATE_AESINIT_ENC; 		// Update of state
+		struct_aes->state = struct_aes->state & (~STATE_AESINIT_DEC); 	// Update of state: remove STATE_AESINIT_DEC from State
 		struct_aes->ctr_aes = 0;								// randomness used to mask the state is refreshed
 	}
 
@@ -103,12 +104,12 @@ UINT aes(UCHAR Mode, STRUCT_AES* struct_aes, const UCHARp key, const UCHARp inpu
 			ret = ret | ERR_OP_AESINIT;							// return an error if aes initialisation fails
 			goto err;
 		}
-		struct_aes->state = struct_aes->state| STATE_AESINIT_DEC; 		// Update of state 
-		struct_aes->state = struct_aes->state & (~STATE_AESINIT_ENC); 	// Update of state: remove STATE_AESINIT_ENC from State 
+		struct_aes->state = struct_aes->state| STATE_AESINIT_DEC; 		// Update of state
+		struct_aes->state = struct_aes->state & (~STATE_AESINIT_ENC); 	// Update of state: remove STATE_AESINIT_ENC from State
 		struct_aes->ctr_aes = 0;								// randomness used to mask the state is refreshed
 	}
 
-	// MODE_AES_ENC or MODE_AES_DEC	
+	// MODE_AES_ENC or MODE_AES_DEC
 	switch (Mode & (MODE_ENC|MODE_DEC)){
 		case MODE_ENC:
 		if(aes_enc(&struct_aes->aes_context, &struct_aes->key_context, input,output)!=0){	// AES encryption
@@ -118,7 +119,7 @@ UINT aes(UCHAR Mode, STRUCT_AES* struct_aes, const UCHARp key, const UCHARp inpu
 		struct_aes->ctr_key ++;										// Increment the counter under the same key randomness
 		struct_aes->ctr_aes ++;										// Increment the counter under the same state randomness
 		break;
-		
+
 		case (MODE_DEC):
 		if(aes_dec(&struct_aes->aes_context, &struct_aes->key_context, input,output)!=0){	// AES decryption
 			ret = ret |ERR_OP_DEC;										// Return an error if aes decryption fails
@@ -135,13 +136,13 @@ err:
 
 /*
  * \brief  		Test id the inputs are consistent with MODE.
- * \details 	This function checks if the inputs are consistent with MODE. For example, MODE cannot contain ENC and DEC commands.  
- *    
- * \param   Mode 			The mode is the command the user wants to execute.          
+ * \details 	This function checks if the inputs are consistent with MODE. For example, MODE cannot contain ENC and DEC commands.
+ *
+ * \param   Mode 			The mode is the command the user wants to execute.
  * \param 	key 			The key is required when MODE_KEYINIT operation in part of the MODE command.
  * \param   key_size 		The key_size is the size in bytes of the key.
  * \param   input     		The input is required when MODE_ENC or MODE_DEC operation is part of the MODE command.
- * \param   input_size      The input_size is the size in bytes of the input.   
+ * \param   input_size      The input_size is the size in bytes of the input.
  * \param  	output 			The output is required when MODE_ENC or MODE_DEC operation is part of the MODE command.
  * \param   output_size   	The output_size is the size in bytes of the output.
  * \return 	TODO
@@ -151,23 +152,23 @@ UINT test_parameter_content(UCHAR Mode, const UCHARp key,  const UCHARp input, U
 	if (Mode & MODE_KEYINIT){
 		if(key== NULL){
 			return ERR_KEY_MISSING;
-		}	
+		}
 	}
 
 	if ( (Mode & (MODE_KEYINIT|MODE_RANDOM_KEY_EXT)) == (MODE_KEYINIT|MODE_RANDOM_KEY_EXT)){
 		if(random_key== NULL){
 			return ERR_RANDOM_KEY_MISSING;
-		}	
-	}	
+		}
+	}
 
 	if ( Mode & MODE_RANDOM_AES_EXT){
 		if(random_aes== NULL){
 			return ERR_RANDOM_AES_MISSING;
-		}	
+		}
 	}
-	
+
 	if ( (Mode & MODE_ENC) == MODE_ENC){
-// LOK: ici la clé a pu être initialisé avant, une clé manquante est vérifiee par le check entre mode/state (test_mode_state).  Lignes ci-dessous à enlever		
+// LOK: ici la clé a pu être initialisé avant, une clé manquante est vérifiee par le check entre mode/state (test_mode_state).  Lignes ci-dessous à enlever
 //		if(key== NULL)
 //			return ERR_KEY_MISSING;
 		if((input== NULL) || (output==NULL)){
@@ -190,8 +191,8 @@ UINT test_parameter_content(UCHAR Mode, const UCHARp key,  const UCHARp input, U
 
 /*
  * \brief  			Test if the Mode is meaningfull.
- * \details 		This function checks if the MODE is consistent. For example, MODE cannot contain ENC and DEC commands at the same time.  
- * \param   Mode 	The mode is the command the user wants to execute.        
+ * \details 		This function checks if the MODE is consistent. For example, MODE cannot contain ENC and DEC commands at the same time.
+ * \param   Mode 	The mode is the command the user wants to execute.
  * \return 	TODO
  */
 UINT test_mode(UCHAR Mode){
@@ -204,12 +205,12 @@ UINT test_mode(UCHAR Mode){
 	// test if Mode asks for ENC and DEC AESINIT operations at the same time
 	if ((Mode & (MODE_AESINIT_ENC|MODE_AESINIT_DEC)) == (MODE_AESINIT_ENC|MODE_AESINIT_DEC) ){
 		return ERR_ENC_AND_DEC_AESINIT;
-	}	
+	}
 
 	// test if Mode asks for ENC and DEC AESINIT operations at the same time or DEC and ENC AESINIT operations at the same time
 	if (((Mode & (MODE_AESINIT_ENC|MODE_DEC)) == (MODE_AESINIT_ENC|MODE_DEC)) || ((Mode & (MODE_AESINIT_DEC|MODE_ENC)) == (MODE_AESINIT_DEC|MODE_ENC))){
 		return ERR_AESINIT_AND_OP;
-	}	
+	}
 	// test if Mode asks for no operation
 	if (Mode == MODE_UNSPECIFIED){
 		return ERR_NO_OPERATION;
@@ -221,11 +222,11 @@ UINT test_mode(UCHAR Mode){
 
 
 /*
- * \brief  	AES engine for encrypting and decrypting protecting by affine masking 
- * \details Description: It check if the command MODE asked by the user is consistent with the current State. 
- *			For example, if the user ask for en encryption(MODE = MODE_ENC) but the key context or the aes context were not initialized 
- *			then it returns the corresponding error (respectively ERR_KEYINIT_MISSING or ERR_AESINIT_MISSING)  
- * \param   Mode 			The mode is the command the user wants to execute.        
+ * \brief  	AES engine for encrypting and decrypting protecting by affine masking
+ * \details Description: It check if the command MODE asked by the user is consistent with the current State.
+ *			For example, if the user ask for en encryption(MODE = MODE_ENC) but the key context or the aes context were not initialized
+ *			then it returns the corresponding error (respectively ERR_KEYINIT_MISSING or ERR_AESINIT_MISSING)
+ * \param   Mode 			The mode is the command the user wants to execute.
 
  * \param   State 			The State is contained the initialized contexts (STATE_KEYINIT,STATE_AESINIT_ENC,STATE_AESINIT_DEC)
  * \return  TODO
