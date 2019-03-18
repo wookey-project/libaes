@@ -1,6 +1,7 @@
 #include "autoconf.h"
 #include "aes.h"
-#include "api/print.h"
+#include "api/stdio.h"
+#include "api/nostd.h"
 #include "api/types.h"
 #include "api/syscall.h"
 //#include "api/malloc.h"
