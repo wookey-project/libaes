@@ -3,6 +3,10 @@ LIB_NAME ?= libaes
 PROJ_FILES = ../../
 LIB_FULL_NAME = $(LIB_NAME).a
 
+# this library is a concatenation of a local basic implementation
+# and a secured, masked implementation using an external project
+LOCAL_LIB_NAME = libgenaes.a
+
 VERSION = 1
 #############################
 
@@ -25,6 +29,8 @@ LD_LIBS += -lsign -L$(BUILD_DIR)
 
 BUILD_DIR ?= $(PROJ_FILE)build
 
+EXTERNALLIB = $(BUILD_DIR)/externals/libmaskedaes.a
+
 SRC_DIR = .
 ALLSRC := $(wildcard $(SRC_DIR)/*.c)
 ALLSRC += $(wildcard $(SRC_DIR)/**/*.c)
@@ -38,10 +44,8 @@ else
 SRC = $(ALLSRC)
 endif
 
-ASM = $(wildcard $(SRC_DIR)/aes_anssi/**/*.S)
 
 OBJ = $(patsubst %.c,$(APP_BUILD_DIR)/%.o,$(SRC))
-ASM_OBJ = $(patsubst %.S,$(APP_BUILD_DIR)/%.o,$(ASM))
 DEP = $(OBJ:.o=.d)
 
 OUT_DIRS = $(dir $(OBJ)) $(dir $(ARCH_OBJ))
@@ -65,9 +69,7 @@ show:
 	@echo "C sources files:"
 	@echo "\tSRC_DIR\t\t=> " $(SRC_DIR)
 	@echo "\tSRC\t\t=> " $(SRC)
-	@echo "\tASM\t\t=> " $(ASM)
 	@echo "\tOBJ\t\t=> " $(OBJ)
-	@echo "\tASM_OBJ\t\t=> " $(ASM_OBJ)
 	@echo
 
 lib: $(APP_BUILD_DIR)/$(LIB_FULL_NAME)
@@ -78,13 +80,14 @@ lib: $(APP_BUILD_DIR)/$(LIB_FULL_NAME)
 $(APP_BUILD_DIR)/%.o: %.c
 	$(call if_changed,cc_o_c)
 
-$(APP_BUILD_DIR)/%.o: %.S
-	$(call if_changed,cc_o_c)
-
 # lib
-$(APP_BUILD_DIR)/$(LIB_FULL_NAME): $(OBJ) $(ASM_OBJ)
+$(APP_BUILD_DIR)/$(LIB_FULL_NAME): $(APP_BUILD_DIR)/$(LOCAL_LIB_NAME) $(EXTERNALLIB)
+	$(call if_changed,fusionlib)
+
+$(APP_BUILD_DIR)/$(LOCAL_LIB_NAME): $(OBJ)
 	$(call if_changed,mklib)
 	$(call if_changed,ranlib)
+
 
 $(APP_BUILD_DIR):
 	$(call cmd,mkdir)

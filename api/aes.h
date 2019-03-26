@@ -10,7 +10,7 @@
 #endif
 
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
-#include "aes_anssi/aes_masked/aes.h"
+#include "externals/secaesstm32/src/aes/aes.h"
 #endif
 
 //#include "product.h"
