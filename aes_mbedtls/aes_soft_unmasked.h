@@ -23,7 +23,7 @@
 #ifndef MBEDTLS_AES_H
 #define MBEDTLS_AES_H
 
-#include "api/types.h"
+#include "libc/types.h"
 
 #define MBEDTLS_AES_C
 #define MBEDTLS_AES_ROM_TABLES

@@ -1,11 +1,11 @@
 /* Top header for AES */
 #include "api/aes.h"
-#include "api/types.h"
-#include "api/stdio.h"
-#include "api/nostd.h"
-#include "api/string.h"
-#include "api/syscall.h"
-#include "api/random.h"
+#include "libc/types.h"
+#include "libc/stdio.h"
+#include "libc/nostd.h"
+#include "libc/string.h"
+#include "libc/syscall.h"
+#include "libc/random.h"
 
 #ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT
 static enum crypto_key_len match_crypto_key_len(enum aes_key_len key_len)

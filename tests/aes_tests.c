@@ -1,10 +1,10 @@
 #include "autoconf.h"
 #include "aes.h"
-#include "api/stdio.h"
-#include "api/nostd.h"
-#include "api/types.h"
-#include "api/syscall.h"
-//#include "api/malloc.h"
+#include "libc/stdio.h"
+#include "libc/nostd.h"
+#include "libc/types.h"
+#include "libc/syscall.h"
+//#include "libc/malloc.h"
 
 
 #if defined(CONFIG_USR_LIB_AES_PERF) || defined(CONFIG_USR_LIB_AES_SELFTESTS)

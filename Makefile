@@ -1,35 +1,46 @@
+###################################################################
+# About the library name and path
+###################################################################
+
+# library name, without extension
 LIB_NAME ?= libaes
 
+# project root directory, relative to app dir
 PROJ_FILES = ../../
+
+# library name, with extension
 LIB_FULL_NAME = $(LIB_NAME).a
 
+# libaes specific:
 # this library is a concatenation of a local basic implementation
 # and a secured, masked implementation using an external project
 LOCAL_LIB_NAME = libgenaes.a
 
-VERSION = 1
-#############################
-
+# SDK helper Makefiles inclusion
 -include $(PROJ_FILES)/Makefile.conf
 -include $(PROJ_FILES)/Makefile.gen
 
 # use an app-specific build dir
 APP_BUILD_DIR = $(BUILD_DIR)/libs/$(LIB_NAME)
 
+###################################################################
+# About the compilation flags
+###################################################################
+
 CFLAGS += $(LIBS_CFLAGS)
 # fixme, asm not yet llvm-compatible
-CFLAGS += -ffreestanding -ffunction-sections -fdata-sections
-CFLAGS += -I../common -I../std -I../libecc/src
-CFLAGS += -I$(PROJ_FILES)/include/generated -Iapi -I. -Iarch/cores/$(CONFIG_ARCH) -I$(PROJ_FILES)
-CFLAGS += $(APPS_CFLAGS)
-CFLAGS += -MMD -MP -Os
-
-LDFLAGS += -fno-builtin -nostdlib -nostartfiles
-LD_LIBS += -lsign -L$(BUILD_DIR)
+CFLAGS += -I../libecc/src
+CFLAGS += -Iapi
+CFLAGS += -MMD -MP
 
 BUILD_DIR ?= $(PROJ_FILE)build
 
+# libaes specific: part of it is an external component
 EXTERNALLIB = $(BUILD_DIR)/externals/libmaskedaes.a
+
+#############################################################
+# About library sources
+#############################################################
 
 SRC_DIR = .
 ALLSRC := $(wildcard $(SRC_DIR)/*.c)
@@ -44,17 +55,20 @@ else
 SRC = $(ALLSRC)
 endif
 
-
 OBJ = $(patsubst %.c,$(APP_BUILD_DIR)/%.o,$(SRC))
 DEP = $(OBJ:.o=.d)
 
-OUT_DIRS = $(dir $(OBJ)) $(dir $(ARCH_OBJ))
+OUT_DIRS = $(dir $(OBJ))
 
 # file to (dist)clean
 # objects and compilation related
 TODEL_CLEAN += $(ARCH_OBJ) $(OBJ)
 # targets
 TODEL_DISTCLEAN += $(APP_BUILD_DIR)
+
+##########################################################
+# generic targets of all libraries makefiles
+##########################################################
 
 .PHONY: app doc
 

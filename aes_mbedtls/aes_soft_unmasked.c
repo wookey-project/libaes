@@ -31,9 +31,9 @@
 
 #if defined(MBEDTLS_AES_C)
 
-#include "api/string.h"
-#include "api/stdio.h"
-#include "api/nostd.h"
+#include "libc/string.h"
+#include "libc/stdio.h"
+#include "libc/nostd.h"
 
 
 #if !defined(MBEDTLS_AES_ALT)
