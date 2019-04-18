@@ -5,8 +5,8 @@
 
 
 /* Very basic AES (unmasked, table based) stolen from mbedtls */
-#ifdef CONFIG_USR_LIB_AES_ALGO_MBEDTLS
-#include "aes_mbedtls/aes_soft_unmasked.h"
+#ifdef CONFIG_USR_LIB_AES_ALGO_UNMASKED
+#include "../aes_soft_unmasked/aes_soft_unmasked.h"
 #endif
 
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
@@ -29,8 +29,8 @@
  *	- Hardware AES with DMA support.
  */
 enum aes_type {
-#ifdef CONFIG_USR_LIB_AES_ALGO_MBEDTLS
-    AES_SOFT_MBEDTLS = 0,
+#ifdef CONFIG_USR_LIB_AES_ALGO_UNMASKED
+    AES_SOFT_UNMASKED = 0,
 #endif
 #if defined(__arm__)
 #ifdef CONFIG_USR_LIB_AES_ALGO_ANSSI_MASKED
@@ -67,9 +67,9 @@ enum aes_dir {
 typedef struct {
     /* AES internal context (depends on the underlying representation) */
     union {
-#ifdef CONFIG_USR_LIB_AES_ALGO_MBEDTLS
+#ifdef CONFIG_USR_LIB_AES_ALGO_UNMASKED
         /* mbedtls specific context */
-        mbedtls_aes_context mbedtls_context;
+        aes_soft_unmasked_context soft_unmasked_context;
 #endif
 #if defined(__arm__)
         /* ANSSI assembly contexts */

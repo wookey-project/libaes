@@ -71,18 +71,19 @@ static int aes_core(aes_context * aes_ctx,
 {
     switch (aes_ctx->type) {
 
-#ifdef CONFIG_USR_LIB_AES_ALGO_MBEDTLS
-    case AES_SOFT_MBEDTLS:{
-            int gnutls_dir;
+#ifdef CONFIG_USR_LIB_AES_ALGO_UNMASKED
+    case AES_SOFT_UNMASKED:{
             if (dir == AES_ENCRYPT) {
-                gnutls_dir = MBEDTLS_AES_ENCRYPT;
+	        if (aes_soft_unmasked_enc
+        	        (&(aes_ctx->soft_unmasked_context), data_in, data_out)) {
+                	goto err;
+            	}
             } else if (dir == AES_DECRYPT) {
-                gnutls_dir = MBEDTLS_AES_DECRYPT;
+	        if (aes_soft_unmasked_dec
+        	        (&(aes_ctx->soft_unmasked_context), data_in, data_out)) {
+                	goto err;
+            	}
             } else {
-                goto err;
-            }
-            if (mbedtls_aes_crypt_ecb
-                (&(aes_ctx->mbedtls_context), gnutls_dir, data_in, data_out)) {
                 goto err;
             }
         }
@@ -263,20 +264,20 @@ int aes_init(aes_context * aes_ctx, const unsigned char *key,
         memset(aes_ctx->iv, 0, AES_BLOCK_SIZE);
     }
     switch (aes_ctx->type) {
-#ifdef CONFIG_USR_LIB_AES_ALGO_MBEDTLS
-      case AES_SOFT_MBEDTLS: {
+#ifdef CONFIG_USR_LIB_AES_ALGO_UNMASKED
+      case AES_SOFT_UNMASKED: {
         switch (aes_ctx->mode) {
         case ECB:
         case CBC:
             /* Use the software unprotected mbedtls AES */
             if (dir == AES_ENCRYPT) {
-                if (mbedtls_aes_setkey_enc
-                    (&(aes_ctx->mbedtls_context), key, get_bit_len(aes_ctx->key_len))) {
+                if (aes_soft_unmasked_setkey_enc
+                    (&(aes_ctx->soft_unmasked_context), key, get_bit_len(aes_ctx->key_len))) {
                     goto err;
                 }
             } else if (dir == AES_DECRYPT) {
-                if (mbedtls_aes_setkey_dec
-                    (&(aes_ctx->mbedtls_context), key, get_bit_len(aes_ctx->key_len))) {
+                if (aes_soft_unmasked_setkey_dec
+                    (&(aes_ctx->soft_unmasked_context), key, get_bit_len(aes_ctx->key_len))) {
                     goto err;
                 }
             } else {
@@ -285,8 +286,8 @@ int aes_init(aes_context * aes_ctx, const unsigned char *key,
             break;
             /* Stream mode only use encryption key schedule */
         case CTR:
-            if (mbedtls_aes_setkey_enc
-                (&(aes_ctx->mbedtls_context), key, get_bit_len(aes_ctx->key_len))) {
+            if (aes_soft_unmasked_setkey_enc
+                (&(aes_ctx->soft_unmasked_context), key, get_bit_len(aes_ctx->key_len))) {
                 goto err;
             }
             break;
@@ -493,8 +494,8 @@ int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
         break;
 # endif
 #endif
-#ifdef CONFIG_USR_LIB_AES_ALGO_MBEDTLS
-    case AES_SOFT_MBEDTLS:
+#ifdef CONFIG_USR_LIB_AES_ALGO_UNMASKED
+    case AES_SOFT_UNMASKED:
         /* Use the software unmasked AES */
         if (aes_mode(aes_ctx, data_in, data_out, data_len)) {
             goto err;

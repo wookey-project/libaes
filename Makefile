@@ -31,7 +31,7 @@ CFLAGS += $(LIBS_CFLAGS)
 # fixme, asm not yet llvm-compatible
 CFLAGS += -I../libecc/src
 CFLAGS += -Iapi
-CFLAGS += -MMD -MP
+CFLAGS += -MMD -MP -O3
 
 BUILD_DIR ?= $(PROJ_FILE)build
 

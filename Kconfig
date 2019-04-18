@@ -16,9 +16,9 @@ config USR_LIB_AES_PERF
   default n
   bool "Embed AES performance test benchmarks"
 
-config USR_LIB_AES_ALGO_MBEDTLS
+config USR_LIB_AES_ALGO_UNMASKED
   default n
-  bool "Embed AES MBEDTLS support"
+  bool "Embed AES unmasked (unprotected) support"
 config USR_LIB_AES_ALGO_ANSSI_MASKED
   default n
   select USR_LIB_RNG
