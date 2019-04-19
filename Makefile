@@ -31,7 +31,10 @@ CFLAGS += $(LIBS_CFLAGS)
 # fixme, asm not yet llvm-compatible
 CFLAGS += -I../libecc/src
 CFLAGS += -Iapi
-CFLAGS += -MMD -MP -O3
+CFLAGS += -MMD -MP
+# Optimizing for size has a huge performance impact (performances
+# are almost half the ones measured with -O3 flag)
+CFLAGS += -O3
 
 BUILD_DIR ?= $(PROJ_FILE)build
 
