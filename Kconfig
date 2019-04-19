@@ -1,6 +1,7 @@
 config USR_LIB_AES
   bool  "userspace libaes with HW Cryp support"
   default y
+  select EXT_SECAES
   ---help---
   Support for AES implementation in both software and
   hardware mode, depending on the SoC.
