@@ -245,7 +245,7 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
 int aes_init(aes_context * aes_ctx, const unsigned char *key,
              enum aes_key_len key_len, const unsigned char *iv,
              enum aes_mode mode, enum aes_dir dir, enum aes_type type,
-             void (*dma_in_complete) (void), void (*dma_out_complete) (void),
+             user_dma_handler_t dma_in_complete, user_dma_handler_t dma_out_complete,
              int dma_in_desc, int dma_out_desc)
 {
     if (aes_ctx == NULL) {
