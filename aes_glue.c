@@ -17,6 +17,8 @@ static enum crypto_key_len match_crypto_key_len(enum aes_key_len key_len)
         return KEY_192;
     case AES256:
         return KEY_256;
+    default:
+        return KEY_128;
     }
 
     return KEY_128;
@@ -31,6 +33,8 @@ static enum crypto_algo match_crypto_mode(enum aes_mode mode)
         return AES_CBC;
     case CTR:
         return AES_CTR;
+    default:
+        return AES_ECB;
     }
 
     return AES_ECB;
@@ -43,6 +47,8 @@ static enum crypto_dir match_crypto_dir(enum aes_dir dir)
         return ENCRYPT;
     case AES_DECRYPT:
         return DECRYPT;
+    default:
+        return ENCRYPT;
     }
 
     return ENCRYPT;
@@ -58,6 +64,8 @@ static unsigned int get_bit_len(enum aes_key_len key_len)
         return 192;
     case AES256:
         return 256;
+    default:
+        return 128;
     }
 
     return 128;
