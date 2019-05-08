@@ -80,7 +80,7 @@ static inline void local_copy(void *dst, const void *src, unsigned int n)
 /* AES primitives *******************************************************/
 /************************************************************************/
 /* Multiplication over Galois field */
-#define xtime(x) ((x<<1) ^ (((x>>7) & 1) * 0x1b))
+#define xtime(x) (((x)<<1) ^ ((((x)>>7) & 1) * 0x1b))
 static inline unsigned char gmul(unsigned char x, unsigned char y){
 	return ((((y & 1) * x) ^ (((y>>1) & 1) * xtime(x)) ^ (((y>>2) & 1) * xtime(xtime(x))) ^ (((y>>3) & 1) * xtime(xtime(xtime(x)))) ^ (((y>>4) & 1) * xtime(xtime(xtime(xtime(x))))))) & 0xff;
 }
@@ -263,7 +263,7 @@ int aes_soft_unmasked_setkey_enc(aes_soft_unmasked_context *ctx, const unsigned 
 			n++;
 		}
 		/* Extra sbox for 256 bit key */
-		if((keybits == 256) && (size % keysize == 16)){
+		if((keybits == 256) && ((size % keysize) == 16)){
 			t[0] = sbox[t[0]]; t[1] = sbox[t[1]];
 			t[2] = sbox[t[2]]; t[3] = sbox[t[3]];
 		}
@@ -291,7 +291,7 @@ int aes_soft_unmasked_enc(aes_soft_unmasked_context *ctx, const unsigned char da
 		goto err;
 	}
 	/* Sanity check for array access */
-	if(16*ctx->nr > sizeof(ctx->rk)){
+	if((16*ctx->nr) > sizeof(ctx->rk)){
 		goto err;
 	}
 	local_copy(state, data_in, 16);
@@ -337,7 +337,7 @@ int aes_soft_unmasked_dec(aes_soft_unmasked_context *ctx, const unsigned char da
 		goto err;
 	}
 	/* Sanity check for array access */
-	if(16*ctx->nr > sizeof(ctx->rk)){
+	if((16*ctx->nr) > sizeof(ctx->rk)){
 		goto err;
 	}
 	local_copy(state, data_in, 16);
