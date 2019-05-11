@@ -20,8 +20,6 @@ static enum crypto_key_len match_crypto_key_len(enum aes_key_len key_len)
     default:
         return KEY_128;
     }
-
-    return KEY_128;
 }
 
 static enum crypto_algo match_crypto_mode(enum aes_mode mode)
@@ -36,8 +34,6 @@ static enum crypto_algo match_crypto_mode(enum aes_mode mode)
     default:
         return AES_ECB;
     }
-
-    return AES_ECB;
 }
 
 static enum crypto_dir match_crypto_dir(enum aes_dir dir)
@@ -50,8 +46,6 @@ static enum crypto_dir match_crypto_dir(enum aes_dir dir)
     default:
         return ENCRYPT;
     }
-
-    return ENCRYPT;
 }
 #endif
 
@@ -67,8 +61,6 @@ static unsigned int get_bit_len(enum aes_key_len key_len)
     default:
         return 128;
     }
-
-    return 128;
 }
 
 /* This is the main AES core dispatcher, useful for software versions and useful for handling modes */
@@ -406,7 +398,7 @@ int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
                 hardware_bytes_to_encrypt = 0;
                 goto ctr_last_block;
             }
-            if ((data_len - bytes) % AES_BLOCK_SIZE != 0) {
+            if (((data_len - bytes) % AES_BLOCK_SIZE) != 0) {
                 hardware_bytes_to_encrypt =
                     (data_len - bytes) - ((data_len - bytes) % AES_BLOCK_SIZE);
             } else {
