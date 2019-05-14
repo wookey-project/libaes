@@ -1,5 +1,8 @@
 .. _lib_aes:
 
+
+.. highlight:: c
+
 The AES library
 ===============
 
