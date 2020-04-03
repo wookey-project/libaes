@@ -25,6 +25,23 @@ config USR_LIB_AES_ALGO_ANSSI_MASKED
   select USR_LIB_RNG
   bool "Embed AES ANSSI masked"
 
+choice
+  prompt "Unmasked AES type"
+  default USR_LIB_AES_ALGO_UNMASKED_TABLE
+config USR_LIB_AES_ALGO_UNMASKED_TABLE
+  depends on USR_LIB_AES_ALGO_UNMASKED
+  bool "Embed AES ANSSI unmasked with tables (high speed)"
+  ---help---
+  Support for table based AES implementation with high
+  flash and SRAM usage but high performance.
+config USR_LIB_AES_ALGO_UNMASKED_SIMPLE
+  depends on USR_LIB_AES_ALGO_UNMASKED
+  bool "Embed AES ANSSI unmasked with compact implementation"
+  ---help---
+  Support for simple AES implementation with minimal
+  flash and SRAM usage but slow performance.
+endchoice
+
 config USR_LIB_AES_ALGO_CRYP_SUPPORT
   default n
   bool "Embed AES HW CRYP Support"

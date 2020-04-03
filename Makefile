@@ -36,6 +36,8 @@ CFLAGS += -MMD -MP
 # are almost half the ones measured with -O3 flag)
 CFLAGS += -O3
 
+CFLAGS := $(subst -Werror,,$(CFLAGS))
+
 BUILD_DIR ?= $(PROJ_FILE)build
 
 # libaes specific: part of it is an external component
