@@ -326,7 +326,7 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
         }
     case CTR:{
             unsigned int i;
-            int offset;
+            unsigned int offset;
 #if (USE_AES_CTR_MASKING == 1)
     	    /* In case of AES CTR, we use additional protections against SCA
 	     * through masking and shuffling when handling the IV.
