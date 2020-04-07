@@ -7,6 +7,15 @@
 #include "libc/syscall.h"
 #include "libc/random.h"
 
+/* AES CTR XOR masking compilation optional support 
+ * NOTE: CTR mode XOR with counters is shuffled and masked.
+ */
+#define USE_AES_CTR_MASKING 1
+/* AES CBC XOR masking compilation optional support
+ * NOTE: CBC mode XOR with IV is shuffled and masked.
+ */
+#define USE_AES_CBC_MASKING 1
+
 #ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT
 static enum crypto_key_len match_crypto_key_len(enum aes_key_len key_len)
 {
@@ -130,16 +139,86 @@ static int aes_core(aes_context * aes_ctx,
 }
 
 /** AES modes **/
+
+/* NOTE: we force *NO optimization* here to ensure
+ * that our masking and shuffling related protections are
+ * not removed by the compiler.
+ */
+#ifdef __GNUC__
+#ifdef __clang__
+# pragma clang optimize off
+#else
+# pragma GCC push_options
+# pragma GCC optimize("O0")
+#endif
+#endif
+#if ((USE_AES_CTR_MASKING == 1) || (USE_AES_CBC_MASKING == 1))
+/**** Generate a random permutation using Knuth Shuffle ****/
+static int gen_permutation(unsigned char *perm, unsigned int size){
+	unsigned int i, j;
+
+	if(perm == NULL){
+		goto err;
+	}
+	for(i = 0; i < size; i++){
+		perm[i] = i;
+	}
+	if(size <= 2){
+		return 0;
+	}
+	for(i = 0; i <= (size - 2); i++){
+		unsigned char swp;
+		if(get_random((unsigned char*)&j, sizeof(j)) != MBED_ERROR_NONE){
+			goto err;
+		}
+		j = (j % (size - i)) + i;
+		swp = perm[i];
+		perm[i] = perm[j];
+		perm[j] = swp;
+	}
+
+	return 0;
+err:
+	return -1;
+}
+
+/* Generate masks */
+static int gen_masks(unsigned char *masks, unsigned int size){
+	unsigned int i;
+
+	if(masks == NULL){
+		goto err;
+	}
+
+	for(i = 0; i < size; i++){
+		if(get_random(&(masks[i]), sizeof(unsigned char)) != MBED_ERROR_NONE){
+			goto err;
+		}
+	}
+	
+	return 0;
+err:
+	return -1;
+}
+#endif
+
+/*** IV incrementation ****/
 static void increment_iv(aes_context * aes_ctx)
 {
     int j;
+    unsigned char end = 0, dummy = 0;
+
     /* Increment counter */
     for (j = AES_BLOCK_SIZE; j > 0; j--) {
-        if (++aes_ctx->iv[j - 1] != 0) {
-            break;
+	if(end == 0){
+            if (++aes_ctx->iv[j - 1] != 0) {        
+                end = 1;
+            }
+        }
+        else{
+           dummy++;
         }
     }
-
 }
 
 static void add_iv(aes_context * aes_ctx, unsigned int to_add)
@@ -179,9 +258,26 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
                 uint8_t tmp[AES_BLOCK_SIZE];
                 memcpy(iv_tmp, aes_ctx->iv, sizeof(iv_tmp));
                 for (i = 0; i < (data_len / AES_BLOCK_SIZE); i++) {
+#if (USE_AES_CBC_MASKING == 1)
+            	    /* In case of CBC masking, we generate a permutation and masks */
+		    unsigned char cbc_perm[AES_BLOCK_SIZE] = { 0 };
+		    unsigned char cbc_masks[AES_BLOCK_SIZE] = { 0 }; 
+	            if(gen_permutation(cbc_perm, AES_BLOCK_SIZE)){
+			goto err;
+		    }
+                    if(gen_masks(cbc_masks, AES_BLOCK_SIZE)){
+			goto err;
+		    }
+                    for (j = 0; j < AES_BLOCK_SIZE; j++) {
+                        tmp[j]  = data_in[(AES_BLOCK_SIZE * i) + cbc_perm[j]] ^ cbc_masks[cbc_perm[j]];
+			tmp[j] ^= iv_tmp[cbc_perm[j]];
+			tmp[j] ^= cbc_masks[cbc_perm[j]];
+                    }
+#else
                     for (j = 0; j < AES_BLOCK_SIZE; j++) {
                         tmp[j] = data_in[(AES_BLOCK_SIZE * i) + j] ^ iv_tmp[j];
                     }
+#endif
                     if (aes_core
                         (aes_ctx, tmp, data_out + (AES_BLOCK_SIZE * i), aes_ctx->dir)) {
                         goto err;
@@ -201,9 +297,26 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
                          data_out + (AES_BLOCK_SIZE * i), aes_ctx->dir)) {
                         goto err;
                     }
+#if (USE_AES_CBC_MASKING == 1)
+            	    /* In case of CBC masking, we generate a permutation and masks */
+		    unsigned char cbc_perm[AES_BLOCK_SIZE] = { 0 };
+		    unsigned char cbc_masks[AES_BLOCK_SIZE] = { 0 }; 
+	            if(gen_permutation(cbc_perm, AES_BLOCK_SIZE)){
+			goto err;
+		    }
+                    if(gen_masks(cbc_masks, AES_BLOCK_SIZE)){
+			goto err;
+		    }
+                    for (j = 0; j < AES_BLOCK_SIZE; j++) {
+			data_out[(AES_BLOCK_SIZE * i) + cbc_perm[j]] ^= cbc_masks[cbc_perm[j]];
+			data_out[(AES_BLOCK_SIZE * i) + cbc_perm[j]] ^= iv_tmp[cbc_perm[j]];
+			data_out[(AES_BLOCK_SIZE * i) + cbc_perm[j]] ^= cbc_masks[cbc_perm[j]];
+                    }
+#else
                     for (j = 0; j < AES_BLOCK_SIZE; j++) {
                         data_out[(AES_BLOCK_SIZE * i) + j] ^= iv_tmp[j];
                     }
+#endif
                     memcpy(iv_tmp, tmp, sizeof(iv_tmp));
                 }
             } else {
@@ -213,21 +326,91 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
         }
     case CTR:{
             unsigned int i;
-            int offset;
+            unsigned int offset;
+#if (USE_AES_CTR_MASKING == 1)
+    	    /* In case of AES CTR, we use additional protections against SCA
+	     * through masking and shuffling when handling the IV.
+	     */
+	    unsigned int num_blocks = 0;
+	    unsigned char ctr_perm[AES_BLOCK_SIZE] = { 0 };
+	    unsigned char ctr_masks[AES_BLOCK_SIZE] = { 0 };
+#endif
    	    /* Sanity check on the offset */
 	    if(aes_ctx->last_off > AES_BLOCK_SIZE){
 	 	goto err;
 	    }
+#if (USE_AES_CTR_MASKING == 1)
+	    if(aes_ctx->last_off != 0){
+                /* First block handling */
+                if(gen_permutation(ctr_perm, AES_BLOCK_SIZE - (aes_ctx->last_off))){
+			goto err;
+		}
+                if(gen_masks(ctr_masks, AES_BLOCK_SIZE - (aes_ctx->last_off))){
+			goto err;
+		}
+	    }
+#endif
             offset = aes_ctx->last_off;
             for (i = 0; i < data_len; i++) {
+#if (USE_AES_CTR_MASKING == 1)
+                unsigned int perm_size, i_perm, offset_perm;
+#endif
                 if (offset == 0) {
+#if (USE_AES_CTR_MASKING == 1)
+		    num_blocks++;
+                    if(((data_len - i) < AES_BLOCK_SIZE) && ((data_len % AES_BLOCK_SIZE) != 0)){
+                        /* Last block handling */
+                        perm_size = (data_len - i);
+                    }
+                    else{
+                        perm_size = AES_BLOCK_SIZE;
+                    }
+                    if(gen_permutation(ctr_perm, perm_size)){
+			goto err;
+		    }
+                    if(gen_masks(ctr_masks, perm_size)){
+			goto err;
+		    }
+#endif
                     if (aes_core
                         (aes_ctx, aes_ctx->iv, aes_ctx->last_block_stream, AES_ENCRYPT)) {
                         goto err;
                     }
                     increment_iv(aes_ctx);
                 }
-                data_out[i] = data_in[i] ^ aes_ctx->last_block_stream[offset];
+#if (USE_AES_CTR_MASKING == 1)
+		if((aes_ctx->last_off != 0) && (i < (AES_BLOCK_SIZE - (aes_ctx->last_off)))){
+			/* First block handling */
+			if(offset < aes_ctx->last_off){
+				/* Should not happen, but better safe than sorry */
+				goto err;
+			} 
+                	i_perm = ctr_perm[offset - aes_ctx->last_off];
+			offset_perm = i_perm + aes_ctx->last_off;
+		}
+		else{
+                	i_perm = offset_perm = ctr_perm[offset];	
+		}
+		if(num_blocks >= 1){
+			/* Offset by the number of treated blocks */
+			i_perm += (AES_BLOCK_SIZE * (num_blocks - 1));
+		}
+		if((aes_ctx->last_off != 0) && (i >= (AES_BLOCK_SIZE - (aes_ctx->last_off)))){
+			/* Block others than first block */
+			i_perm += (AES_BLOCK_SIZE - (aes_ctx->last_off));
+		}
+		/* Sanity check before access */
+		if((i_perm >= data_len) || (offset_perm >= AES_BLOCK_SIZE)){
+			goto err;
+		}
+                /* Shuffled and masked IV xoring */
+                data_out[i_perm]  = data_in[i_perm] ^ ctr_masks[offset_perm];
+                data_out[i_perm] ^= aes_ctx->last_block_stream[offset_perm];
+                data_out[i_perm] ^= ctr_masks[offset_perm];
+#else
+                data_out[i]  = data_in[i] ^ aes_ctx->last_block_stream[offset];
+#endif
+                /***/
                 offset = (offset + 1) % AES_BLOCK_SIZE;
             }
             aes_ctx->last_off = offset;
@@ -241,6 +424,14 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
  err:
     return -1;
 }
+#ifdef __GNUC__
+#ifdef __clang__
+# pragma clang optimize on
+#else
+# pragma GCC pop_options
+#endif
+#endif
+
 
 int aes_init(aes_context * aes_ctx, const unsigned char *key,
              enum aes_key_len key_len, const unsigned char *iv,
