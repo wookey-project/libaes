@@ -54,21 +54,33 @@ ALLSRC += $(wildcard $(SRC_DIR)/**/**/*.c)
 
 # if AES test benchmark is not activated,
 # AES tests are not compiled-in
+
+
+# FIXME: RBE: is it possible, instead of filter-out, to add preprocessing inside to
+# empty the file ? This would avoid to create differenciate *source lists* for 
+# FW and DFU mode.
+# Otherwise, it is required to define SRC_FW and SRC_DFU instead of SRC, which
+# is less readable :-/
 ifndef CONFIG_USR_LIB_AES_PERF
 SRC = $(filter-out ./tests/aes_tests.c,$(ALLSRC))
 else
 SRC = $(ALLSRC)
 endif
 
-OBJ = $(patsubst %.c,$(APP_BUILD_DIR)/%.o,$(SRC))
-
-ifeq (y,CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD)
+# two build types: separated FW and DFU featureset, or single global featureset.
+# This build type is controlled by USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD flag.
+# In case of separated build, all objects, deps and libary files are written
+# in dfu/ and fw/ subdirectories, and the current makefile build two independent
+# libraries, with a differenciate additional cflag to detect DFU build: -DMODE_DFU
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 OBJ_FW = $(patsubst %.c,$(APP_BUILD_DIR)/fw/%.o,$(SRC))
 OBJ_DFU = $(patsubst %.c,$(APP_BUILD_DIR)/dfu/%.o,$(SRC))
+else
+OBJ = $(patsubst %.c,$(APP_BUILD_DIR)/%.o,$(SRC))
 endif
 DEP = $(OBJ:.o=.d)
 
-ifeq (y,CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD)
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 DEP_FW = $(OBJ_FW:.o=.d)
 DEP_DFU = $(OBJ_DFU:.o=.d)
 endif
@@ -89,7 +101,7 @@ TODEL_DISTCLEAN += $(APP_BUILD_DIR)
 
 default: all
 
-ifeq (y,CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD)
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 all: $(APP_BUILD_DIR)  $(APP_BUILD_DIR)/dfu $(APP_BUILD_DIR)/fw lib
 else
 all: $(APP_BUILD_DIR) lib
@@ -104,7 +116,7 @@ show:
 	@echo "C sources files:"
 	@echo "\tSRC_DIR\t\t=> " $(SRC_DIR)
 	@echo "\tSRC\t\t=> " $(SRC)
-ifeq (y,CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD)
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 	@echo "\tOBJ_FW\t\t=> " $(OBJ_FW)
 	@echo "\tOBJ_DFU\t\t=> " $(OBJ_DFU)
 else
@@ -112,7 +124,7 @@ else
 endif
 	@echo
 
-ifeq (y,CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD)
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 lib: $(APP_BUILD_DIR)/dfu/$(LIB_FULL_NAME) $(APP_BUILD_DIR)/fw/$(LIB_FULL_NAME)
 else
 lib: $(APP_BUILD_DIR)/$(LIB_FULL_NAME)
@@ -122,20 +134,45 @@ endif
 # build targets (driver, core, SoC, Board... and local)
 # App C sources files
 #
-ifeq (y,CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD)
+
+
+
+# in case of differenciate build, here is the metholodogy:
+#
+# two obj file lists: one in fw/ subdir, one in dfu/ subdirs.
+# In order to inform the C code which (fw or dfu) lib is currently being
+# compiled, an additional CFLAGS is passed to DFU library only, by
+# appending -DMODE_DFU to DFU OBJS build command cc_o_cc through
+# the locally upgraded only CFLAGS variable.
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
+
+# here: build fw mode library object files
+$(APP_BUILD_DIR)/fw/%.o: %.c
+	$(call if_changed,cc_o_c)
+
+
+# here: build dfu mode library object files
+OLD_CGLAGS = $(CFLAGS)
+CFLAGS += -DMODE_DFU
+
 $(APP_BUILD_DIR)/dfu/%.o: %.c
 	$(call if_changed,cc_o_c)
 
-$(APP_BUILD_DIR)/fw/%.o: %.c
-	$(call if_changed,cc_o_c)
+CFLAGS := $(OLD_CFLAGS)
+#
 else
+# in case of common library (without dfu/fw dedicated featureset), nothing
+# special is done.
 $(APP_BUILD_DIR)/%.o: %.c
 	$(call if_changed,cc_o_c)
 endif
 
 # lib
+
+# in case of dedicated fw/dfu mode featureset, two libraries are fusion with the
+# external libSecAES lib. There is no differenciated libSecAES usage here.
 #
-ifeq (y,CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD)
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 $(APP_BUILD_DIR)/dfu/$(LIB_FULL_NAME): $(APP_BUILD_DIR)/dfu/$(LOCAL_LIB_NAME) $(EXTERNALLIB)
 	$(call if_changed,fusionlib)
 
@@ -148,7 +185,11 @@ $(APP_BUILD_DIR)/$(LIB_FULL_NAME): $(APP_BUILD_DIR)/$(LOCAL_LIB_NAME) $(EXTERNAL
 endif
 
 
-ifeq (y,CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD)
+# in case of dedicated fw/dfu mode featureset, two libraries are built based on
+# the localy built library. There is no dfu or fw specific action here, just two
+# libraries that are built
+#
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 $(APP_BUILD_DIR)/dfu/$(LOCAL_LIB_NAME): $(OBJ_DFU)
 	$(call if_changed,mklib)
 	$(call if_changed,ranlib)
@@ -166,7 +207,7 @@ endif
 $(APP_BUILD_DIR):
 	$(call cmd,mkdir)
 
-ifeq (y,CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD)
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 $(APP_BUILD_DIR)/dfu:
 	$(call cmd,mkdir)
 
@@ -175,7 +216,7 @@ $(APP_BUILD_DIR)/fw:
 	$(call cmd,mkdir)
 endif
 
-ifeq (y,CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD)
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 -include $(DEP_FW)
 -include $(DEP_DFU)
 else
