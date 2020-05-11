@@ -89,7 +89,11 @@ OUT_DIRS = $(dir $(OBJ))
 
 # file to (dist)clean
 # objects and compilation related
-TODEL_CLEAN += $(ARCH_OBJ) $(OBJ)
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
+TODEL_CLEAN += $(OBJ_FW) $(OBJ_DFU)
+else
+TODEL_CLEAN += $(OBJ)
+endif
 # targets
 TODEL_DISTCLEAN += $(APP_BUILD_DIR)
 
