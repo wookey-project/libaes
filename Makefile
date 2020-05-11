@@ -119,10 +119,26 @@ show:
 ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 	@echo "\tOBJ_FW\t\t=> " $(OBJ_FW)
 	@echo "\tOBJ_DFU\t\t=> " $(OBJ_DFU)
+	@echo
+	$(Q)$(MAKE) show_dfu_cflags
+	$(Q)$(MAKE) show_fw_cflags
 else
 	@echo "\tOBJ\t\t=> " $(OBJ)
 endif
 	@echo
+
+
+ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
+# assigning a dedicated cflags to show_dfu_flags only
+show_dfu_cflags: CFLAGS += -DMODE_DFU
+show_dfu_cflags:
+	@echo "\tDFU_CFLAGS\t=> " $(CFLAGS)
+
+show_fw_cflags:
+	@echo "\tFW_CFLAGS\t=> " $(CFLAGS)
+endif
+
+
 
 ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 lib: $(APP_BUILD_DIR)/dfu/$(LIB_FULL_NAME) $(APP_BUILD_DIR)/fw/$(LIB_FULL_NAME)
@@ -152,13 +168,11 @@ $(APP_BUILD_DIR)/fw/%.o: %.c
 
 
 # here: build dfu mode library object files
-OLD_CGLAGS = $(CFLAGS)
-CFLAGS += -DMODE_DFU
-
+# assigning a dedicated cflags to DFU objs file build only
+# see GNU Make(1) target specific variales
+$(APP_BUILD_DIR)/dfu/%.o: CFLAGS += -DMODE_DFU
 $(APP_BUILD_DIR)/dfu/%.o: %.c
 	$(call if_changed,cc_o_c)
-
-CFLAGS := $(OLD_CFLAGS)
 #
 else
 # in case of common library (without dfu/fw dedicated featureset), nothing
