@@ -1,6 +1,6 @@
 #ifndef __AES_SOFT_UNMASKED_H__
 #define __AES_SOFT_UNMASKED_H__
-#include "autoconf.h"
+#include "autoconf_aes_glue.h"
 
 #ifdef CONFIG_USR_LIB_AES_ALGO_UNMASKED
 #include "libc/types.h"

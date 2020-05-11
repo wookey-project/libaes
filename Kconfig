@@ -30,10 +30,6 @@ config USR_LIB_AES_FW_PERF
 config USR_LIB_AES_FW_ALGO_UNMASKED
   default n
   bool "Embed AES unmasked (unprotected) support"
-config USR_LIB_AES_FW_ALGO_ANSSI_MASKED
-  default n
-  select USR_LIB_FW_RNG
-  bool "Embed AES ANSSI masked"
 
 choice
   prompt "Unmasked AES type"
@@ -51,6 +47,11 @@ config USR_LIB_AES_FW_ALGO_UNMASKED_SIMPLE
   Support for simple AES implementation with minimal
   flash and SRAM usage but slow performance.
 endchoice
+
+config USR_LIB_AES_FW_ALGO_ANSSI_MASKED
+  default n
+  select USR_LIB_RNG
+  bool "Embed AES ANSSI masked"
 
 config USR_LIB_AES_FW_ALGO_CRYP_SUPPORT
   default n
@@ -80,10 +81,6 @@ config USR_LIB_AES_DFU_PERF
 config USR_LIB_AES_DFU_ALGO_UNMASKED
   default n
   bool "Embed AES unmasked (unprotected) support"
-config USR_LIB_AES_DFU_ALGO_ANSSI_MASKED
-  default n
-  select USR_LIB_DFU_RNG
-  bool "Embed AES ANSSI masked"
 
 choice
   prompt "Unmasked AES type"
@@ -101,6 +98,11 @@ config USR_LIB_AES_DFU_ALGO_UNMASKED_SIMPLE
   Support for simple AES implementation with minimal
   flash and SRAM usage but slow performance.
 endchoice
+
+config USR_LIB_AES_DFU_ALGO_ANSSI_MASKED
+  default n
+  select USR_LIB_RNG
+  bool "Embed AES ANSSI masked"
 
 config USR_LIB_AES_DFU_ALGO_CRYP_SUPPORT
   default n

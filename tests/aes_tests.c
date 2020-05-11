@@ -1,4 +1,3 @@
-#include "autoconf.h"
 #include "aes.h"
 #include "libc/stdio.h"
 #include "libc/nostd.h"
