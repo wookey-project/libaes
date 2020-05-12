@@ -1178,7 +1178,6 @@ err:
 	return -1;
 }
 
-extern uint32_t __stack_chk_guard;
 /* Decryption key schedule */
 int aes_soft_unmasked_setkey_dec(aes_soft_unmasked_context *ctx, const uint8_t *key, uint32_t keybits)
 {
