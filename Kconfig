@@ -24,7 +24,7 @@ if USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD
 menu "Firwmare-mode libAES features"
 
 config USR_LIB_AES_FW_PERF
-  default y
+  default n
   bool "Embed AES performance test benchmarks"
 
 config USR_LIB_AES_FW_ALGO_UNMASKED
