@@ -1,10 +1,9 @@
-#include "autoconf.h"
 #include "aes.h"
 #include "libc/stdio.h"
 #include "libc/nostd.h"
 #include "libc/types.h"
 #include "libc/syscall.h"
-//#include "libc/malloc.h"
+#include "libc/string.h"
 
 
 #if defined(CONFIG_USR_LIB_AES_PERF) || defined(CONFIG_USR_LIB_AES_SELFTESTS)
@@ -20,10 +19,10 @@ unsigned int i, j;
 volatile uint64_t start_init, end_init, start_crypt, end_crypt;
 
 const aes_desc available_aes[] = {
-#ifdef CONFIG_USR_LIB_AES_ALGO_MBEDTLS
+#ifdef CONFIG_USR_LIB_AES_ALGO_UNMASKED
     {
-     .name = "AES_SOFT_MBEDTLS",
-     .type = AES_SOFT_MBEDTLS,
+     .name = "AES_ALGO_UNMASKED",
+     .type = AES_SOFT_UNMASKED,
      },
 #endif
 #if defined(__arm__)
@@ -527,6 +526,12 @@ int do_aes_test_vectors(int dma_in_desc, int dma_out_desc)
             uint8_t tmp[MAX_TEST_BUF_LEN];
             aes_context ctx;
 
+	    if((dma_in_desc == 0) || (dma_out_desc == 0)){
+		if(available_aes[j].type == AES_HARD_DMA){
+		     printf("[AES self tests] Skipping %s/%s as asked by user (no hardware acceleration)\n", available_aes[j].name, aes_tests[i]->name);
+		     continue;
+		}
+	    }
 #ifdef CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT
             dma_in_ok = dma_out_ok = 0;
 #endif
@@ -725,26 +730,24 @@ int do_aes_test_performance(int dma_in_desc, int dma_out_desc)
         printf("[AES perf tests] Error when generating the test cases ...\n");
         goto error;
     }
-    //TODO: no more needed in userspace
-    //init_cycles_count();
-    //start_cycles_count();
 
     for (j = 0; j < sizeof(available_aes) / sizeof(aes_desc); j++) {
         aes_context ctx;
         /* Dummy key and IV for performance measurement */
         uint8_t key[32] = { 0 };
         uint8_t iv[16] = { 0 };
-//        uint32_t sizew = 0;
-//        char ipc_buf[128];
-        //uint8_t *msg = NULL;
-
-     //   uint64_t start_systick = 0;
-     //   uint64_t stop_systick = 0;
 
         for (i = 0;
              i < (sizeof(possible_aes_perf_case) / sizeof(aes_perf_case));
              i++) {
             dma_in_ok = dma_out_ok = 0;
+
+	    if((dma_in_desc == 0) || (dma_out_desc == 0)){
+		if(available_aes[j].type == AES_HARD_DMA){
+		     printf("[AES self tests] Skipping %s/%s as asked by user (no hardware acceleration)\n", available_aes[j].name, aes_tests[i]->name);
+		     continue;
+		}
+	    }
 
             //reset_cycles_count();
 
