@@ -75,14 +75,11 @@ endif
 ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 OBJ_FW = $(patsubst %.c,$(APP_BUILD_DIR)/fw/%.o,$(SRC))
 OBJ_DFU = $(patsubst %.c,$(APP_BUILD_DIR)/dfu/%.o,$(SRC))
-else
-OBJ = $(patsubst %.c,$(APP_BUILD_DIR)/%.o,$(SRC))
-endif
-DEP = $(OBJ:.o=.d)
-
-ifeq (y,$(CONFIG_USR_LIB_AES_DIFFERENCIATE_DFU_FW_BUILD))
 DEP_FW = $(OBJ_FW:.o=.d)
 DEP_DFU = $(OBJ_DFU:.o=.d)
+else
+OBJ = $(patsubst %.c,$(APP_BUILD_DIR)/%.o,$(SRC))
+DEP = $(OBJ:.o=.d)
 endif
 
 OUT_DIRS = $(dir $(OBJ))
