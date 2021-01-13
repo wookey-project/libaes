@@ -7,6 +7,7 @@
 #include "libc/syscall.h"
 #include "libc/random.h"
 
+
 /* AES CTR XOR masking compilation optional support 
  * NOTE: CTR mode XOR with counters is shuffled and masked.
  */
@@ -203,7 +204,7 @@ err:
 #endif
 
 /*** IV incrementation ****/
-static void increment_iv(aes_context * aes_ctx)
+void increment_iv(uint8_t IV[16])
 {
     int j;
     unsigned char end = 0, dummy = 0;
@@ -211,7 +212,7 @@ static void increment_iv(aes_context * aes_ctx)
     /* Increment counter */
     for (j = AES_BLOCK_SIZE; j > 0; j--) {
 	if(end == 0){
-            if (++aes_ctx->iv[j - 1] != 0) {        
+            if (++IV[j - 1] != 0) {        
                 end = 1;
             }
         }
@@ -221,12 +222,22 @@ static void increment_iv(aes_context * aes_ctx)
     }
 }
 
-static void add_iv(aes_context * aes_ctx, unsigned int to_add)
+void add_iv(uint8_t IV[16], unsigned int to_add)
 {
     unsigned int i;
     for (i = 0; i < to_add; i++) {
-        increment_iv(aes_ctx);
+        increment_iv(IV);
     }
+}
+
+void increment_iv_ctx(aes_context * aes_ctx)
+{
+    increment_iv(aes_ctx->iv);
+}
+
+void add_iv_ctx(aes_context * aes_ctx, unsigned int to_add)
+{
+    add_iv(aes_ctx->iv, to_add);
 }
 
 static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
@@ -376,7 +387,7 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
                         (aes_ctx, aes_ctx->iv, aes_ctx->last_block_stream, AES_ENCRYPT)) {
                         goto err;
                     }
-                    increment_iv(aes_ctx);
+                    increment_iv_ctx(aes_ctx);
                 }
 #if (USE_AES_CTR_MASKING == 1)
 		if((aes_ctx->last_off != 0) && (i < (AES_BLOCK_SIZE - (aes_ctx->last_off)))){
@@ -436,8 +447,8 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
 int aes_init(aes_context * aes_ctx, const unsigned char *key,
              enum aes_key_len key_len, const unsigned char *iv,
              enum aes_mode mode, enum aes_dir dir, enum aes_type type,
-             user_dma_handler_t dma_in_complete, user_dma_handler_t dma_out_complete,
-             int dma_in_desc, int dma_out_desc)
+             UNUSED_ATTR user_dma_handler_t dma_in_complete, UNUSED_ATTR user_dma_handler_t dma_out_complete,
+             UNUSED_ATTR int dma_in_desc, UNUSED_ATTR int dma_out_desc)
 {
     if (aes_ctx == NULL) {
         goto err;
@@ -554,7 +565,7 @@ int aes_init(aes_context * aes_ctx, const unsigned char *key,
 
 int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
         unsigned char *data_out, unsigned int data_len,
-        int dma_in_desc, int dma_out_desc)
+        UNUSED_ATTR int dma_in_desc, UNUSED_ATTR int dma_out_desc)
 {
     if (aes_ctx == NULL) {
         goto err;
@@ -600,7 +611,7 @@ int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
                 cryp_do_no_dma((data_in + bytes), (data_out + bytes),
                                hardware_bytes_to_encrypt);
                 /* Increment our IV by as many blocks as needed */
-                add_iv(aes, hardware_bytes_to_encrypt / AES_BLOCK_SIZE);
+                add_iv_ctx(aes, hardware_bytes_to_encrypt / AES_BLOCK_SIZE);
             }
 #  endif
 #  ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
@@ -608,7 +619,7 @@ int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
                 /* Increment our IV by as many blocks as needed */
                 cryp_do_dma(data_in + bytes, data_out + bytes,
                             hardware_bytes_to_encrypt, dma_in_desc, dma_out_desc);
-                add_iv(aes_ctx, hardware_bytes_to_encrypt / AES_BLOCK_SIZE);
+                add_iv_ctx(aes_ctx, hardware_bytes_to_encrypt / AES_BLOCK_SIZE);
             }
 #  endif
             if ((data_len - bytes - hardware_bytes_to_encrypt) == 0) {
@@ -625,7 +636,7 @@ int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
                 /* Increment our IV by one block */
                 cryp_do_no_dma((data_in + bytes), (data_out + bytes),
                                hardware_bytes_to_encrypt);
-                add_iv(aes, 1);
+                add_iv_ctx(aes, 1);
             } else {
                 goto err;
             }
@@ -636,7 +647,7 @@ int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
                             hardware_bytes_to_encrypt, dma_in_desc, dma_out_desc);
                 /* Increment our IV by as many blocks as needed */
                 /* Increment our IV by one block */
-                add_iv(aes_ctx, 1);
+                add_iv_ctx(aes_ctx, 1);
             } else {
                 goto err;
             }

@@ -1,5 +1,12 @@
 #include "aes_soft_unmasked.h"
 
+#ifndef WEAK_ATTR
+#define WEAK_ATTR __attribute__((weak))
+#endif
+#ifndef UNUSED_ATTR
+#define UNUSED_ATTR __attribute__((unused))
+#endif
+
 #ifdef CONFIG_USR_LIB_AES_ALGO_UNMASKED
 
 #if !defined(CONFIG_USR_LIB_AES_ALGO_UNMASKED_SIMPLE) && !defined(CONFIG_USR_LIB_AES_ALGO_UNMASKED_TABLE)
@@ -298,7 +305,7 @@ static inline void sched(uint8_t *in, uint8_t n){
 }
 
 /* Encryption key schedule */
-int aes_soft_unmasked_setkey_enc(aes_soft_unmasked_context *ctx, const uint8_t *key, uint32_t keybits)
+WEAK_ATTR int aes_soft_unmasked_setkey_enc(aes_soft_unmasked_context *ctx, const uint8_t *key, uint32_t keybits)
 {
 	uint32_t size = (keybits / 8);
 	uint8_t t[4];
@@ -346,7 +353,7 @@ err:
 }
 
 /* Encryption primitive */
-int aes_soft_unmasked_enc(aes_soft_unmasked_context *ctx, const uint8_t data_in[16], uint8_t data_out[16])
+WEAK_ATTR int aes_soft_unmasked_enc(aes_soft_unmasked_context *ctx, const uint8_t data_in[16], uint8_t data_out[16])
 {
 	uint32_t r;
 	/* Our local state */
@@ -388,14 +395,14 @@ err:
 }
 
 /* Decryption key schedule */
-int aes_soft_unmasked_setkey_dec(aes_soft_unmasked_context *ctx, const uint8_t *key, uint32_t keybits)
+WEAK_ATTR int aes_soft_unmasked_setkey_dec(aes_soft_unmasked_context *ctx, const uint8_t *key, uint32_t keybits)
 {
 	/* Encryption and decryption have the same key schedule */
 	return aes_soft_unmasked_setkey_enc(ctx, key, keybits);
 }
 
 /* Decryption primitive */
-int aes_soft_unmasked_dec(aes_soft_unmasked_context *ctx, const uint8_t data_in[16], uint8_t data_out[16])
+WEAK_ATTR int aes_soft_unmasked_dec(aes_soft_unmasked_context *ctx, const uint8_t data_in[16], uint8_t data_out[16])
 {
 	uint32_t r;
 	/* Our local state */
@@ -993,7 +1000,7 @@ static const uint32_t rcon[10] = {
 /************************************************************************/
 
 /* Encryption key schedule */
-int aes_soft_unmasked_setkey_enc(aes_soft_unmasked_context *ctx, const uint8_t *key, uint32_t keybits)
+WEAK_ATTR int aes_soft_unmasked_setkey_enc(aes_soft_unmasked_context *ctx, const uint8_t *key, uint32_t keybits)
 {
 	uint32_t i;
 	uint32_t keysize = (keybits / 8);
@@ -1105,7 +1112,7 @@ do {                                               	  \
                    Te3[ ( (Y2) >> 24 ) & 0xFF ]; RK++; 	  \
 } while(0);
 
-int aes_soft_unmasked_enc(aes_soft_unmasked_context *ctx, const uint8_t data_in[16], uint8_t data_out[16])
+WEAK_ATTR int aes_soft_unmasked_enc(aes_soft_unmasked_context *ctx, const uint8_t data_in[16], uint8_t data_out[16])
 {
 	uint32_t i;
 	/* Our local key and state */
@@ -1179,7 +1186,7 @@ err:
 }
 
 /* Decryption key schedule */
-int aes_soft_unmasked_setkey_dec(aes_soft_unmasked_context *ctx, const uint8_t *key, uint32_t keybits)
+WEAK_ATTR int aes_soft_unmasked_setkey_dec(aes_soft_unmasked_context *ctx, const uint8_t *key, uint32_t keybits)
 {
 	uint32_t i, j;
 	aes_soft_unmasked_context ctxx;
@@ -1247,7 +1254,7 @@ do {                                               	  \
                    Td3[ ( (Y0) >> 24 ) & 0xFF ]; RK++; 	  \
 } while(0);
 
-int aes_soft_unmasked_dec(aes_soft_unmasked_context *ctx, const uint8_t data_in[16], uint8_t data_out[16])
+WEAK_ATTR int aes_soft_unmasked_dec(aes_soft_unmasked_context *ctx, const uint8_t data_in[16], uint8_t data_out[16])
 {
 	uint32_t i;
 	/* Our local key and state */
