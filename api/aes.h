@@ -4,6 +4,13 @@
 #include "autoconf_aes_glue.h"
 #include "libc/syscall.h"
 
+#ifndef WEAK_ATTR
+#define WEAK_ATTR __attribute__((weak))
+#endif
+#ifndef UNUSED_ATTR
+#define UNUSED_ATTR __attribute__((unused))
+#endif
+
 /* Very basic AES (unmasked, table based) stolen from mbedtls */
 #ifdef CONFIG_USR_LIB_AES_ALGO_UNMASKED
 #include "../aes_soft_unmasked/aes_soft_unmasked.h"
@@ -95,6 +102,11 @@ typedef struct {
     user_dma_handler_t dma_in_complete;
     user_dma_handler_t dma_out_complete;
 } aes_context;
+
+void increment_iv(uint8_t IV[16]);
+void add_iv(uint8_t IV[16], unsigned int to_add);
+void increment_iv_ctx(aes_context * aes_ctx);
+void add_iv_ctx(aes_context * aes_ctx, unsigned int to_add);
 
 int aes_init(aes_context * aes_ctx, const unsigned char *key,
              enum aes_key_len key_len, const unsigned char *iv,
