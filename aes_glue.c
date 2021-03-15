@@ -280,9 +280,9 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
 			goto err;
 		    }
                     for (j = 0; j < AES_BLOCK_SIZE; j++) {
-                        tmp[j]  = data_in[(AES_BLOCK_SIZE * i) + cbc_perm[j]] ^ cbc_masks[cbc_perm[j]];
-			tmp[j] ^= iv_tmp[cbc_perm[j]];
-			tmp[j] ^= cbc_masks[cbc_perm[j]];
+                        tmp[cbc_perm[j]]  = data_in[(AES_BLOCK_SIZE * i) + cbc_perm[j]] ^ cbc_masks[cbc_perm[j]];
+			tmp[cbc_perm[j]] ^= iv_tmp[cbc_perm[j]];
+			tmp[cbc_perm[j]] ^= cbc_masks[cbc_perm[j]];
                     }
 #else
                     for (j = 0; j < AES_BLOCK_SIZE; j++) {
