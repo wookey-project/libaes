@@ -8,7 +8,7 @@
 #include "libc/random.h"
 
 
-/* AES CTR XOR masking compilation optional support 
+/* AES CTR XOR masking compilation optional support
  * NOTE: CTR mode XOR with counters is shuffled and masked.
  */
 #define USE_AES_CTR_MASKING 1
@@ -196,7 +196,7 @@ static int gen_masks(unsigned char *masks, unsigned int size){
 			goto err;
 		}
 	}
-	
+
 	return 0;
 err:
 	return -1;
@@ -212,7 +212,7 @@ void increment_iv(uint8_t IV[16])
     /* Increment counter */
     for (j = AES_BLOCK_SIZE; j > 0; j--) {
 	if(end == 0){
-            if (++IV[j - 1] != 0) {        
+            if (++IV[j - 1] != 0) {
                 end = 1;
             }
         }
@@ -272,7 +272,7 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
 #if (USE_AES_CBC_MASKING == 1)
             	    /* In case of CBC masking, we generate a permutation and masks */
 		    unsigned char cbc_perm[AES_BLOCK_SIZE] = { 0 };
-		    unsigned char cbc_masks[AES_BLOCK_SIZE] = { 0 }; 
+		    unsigned char cbc_masks[AES_BLOCK_SIZE] = { 0 };
 	            if(gen_permutation(cbc_perm, AES_BLOCK_SIZE)){
 			goto err;
 		    }
@@ -311,7 +311,7 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
 #if (USE_AES_CBC_MASKING == 1)
             	    /* In case of CBC masking, we generate a permutation and masks */
 		    unsigned char cbc_perm[AES_BLOCK_SIZE] = { 0 };
-		    unsigned char cbc_masks[AES_BLOCK_SIZE] = { 0 }; 
+		    unsigned char cbc_masks[AES_BLOCK_SIZE] = { 0 };
 	            if(gen_permutation(cbc_perm, AES_BLOCK_SIZE)){
 			goto err;
 		    }
@@ -395,12 +395,12 @@ static int aes_mode(aes_context * aes_ctx, const unsigned char *data_in,
 			if(offset < aes_ctx->last_off){
 				/* Should not happen, but better safe than sorry */
 				goto err;
-			} 
+			}
                 	i_perm = ctr_perm[offset - aes_ctx->last_off];
 			offset_perm = i_perm + aes_ctx->last_off;
 		}
 		else{
-                	i_perm = offset_perm = ctr_perm[offset];	
+                	i_perm = offset_perm = ctr_perm[offset];
 		}
 		if(num_blocks >= 1){
 			/* Offset by the number of treated blocks */
@@ -611,7 +611,7 @@ int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
                 cryp_do_no_dma((data_in + bytes), (data_out + bytes),
                                hardware_bytes_to_encrypt);
                 /* Increment our IV by as many blocks as needed */
-                add_iv_ctx(aes, hardware_bytes_to_encrypt / AES_BLOCK_SIZE);
+                add_iv_ctx(aes_ctx, hardware_bytes_to_encrypt / AES_BLOCK_SIZE);
             }
 #  endif
 #  ifdef  CONFIG_USR_LIB_AES_ALGO_CRYP_SUPPORT_DMA
@@ -636,7 +636,7 @@ int aes_exec(aes_context * aes_ctx, const unsigned char *data_in,
                 /* Increment our IV by one block */
                 cryp_do_no_dma((data_in + bytes), (data_out + bytes),
                                hardware_bytes_to_encrypt);
-                add_iv_ctx(aes, 1);
+                add_iv_ctx(aes_ctx, 1);
             } else {
                 goto err;
             }
