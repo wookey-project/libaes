@@ -34,7 +34,7 @@ CFLAGS += -Iapi
 CFLAGS += -MMD -MP
 # Optimizing for size has a huge performance impact (performances
 # are almost half the ones measured with -O3 flag)
-CFLAGS += -O3
+CFLAGS += -Os
 
 BUILD_DIR ?= $(PROJ_FILE)build
 
