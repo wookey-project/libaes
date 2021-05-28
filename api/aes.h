@@ -1,7 +1,7 @@
 #ifndef __AES_H__
 #define __AES_H__
 
-#include "autoconf_aes_glue.h"
+#include "autoconf.h"
 #include "libc/syscall.h"
 
 /* Very basic AES (unmasked, table based) stolen from mbedtls */
